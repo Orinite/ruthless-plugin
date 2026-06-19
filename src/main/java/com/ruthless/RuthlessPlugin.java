@@ -1,4 +1,4 @@
-package com.example;
+package com.ruthless;
 
 import com.google.inject.Provides;
 import javax.inject.Inject;
@@ -14,15 +14,18 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Example"
+	name = "Ruthless Clan",
+		tags = {"ruthless", "clan"},
+		description = "Automates things for Ruthless clan."
 )
-public class ExamplePlugin extends Plugin
+public class RuthlessPlugin extends Plugin
 {
+	static final String CONFIG_GROUP = "ruthlessosrsclan";
 	@Inject
 	private Client client;
 
 	@Inject
-	private ExampleConfig config;
+	private RuthlessConfig config;
 
 	@Override
 	protected void startUp() throws Exception
@@ -41,13 +44,13 @@ public class ExamplePlugin extends Plugin
 	{
 		if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
 		{
-			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Example says " + config.greeting(), null);
+			//do something
 		}
 	}
 
 	@Provides
-	ExampleConfig provideConfig(ConfigManager configManager)
+	RuthlessConfig provideConfig(ConfigManager configManager)
 	{
-		return configManager.getConfig(ExampleConfig.class);
+		return configManager.getConfig(RuthlessConfig.class);
 	}
 }
