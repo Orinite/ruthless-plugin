@@ -1,4 +1,4 @@
-package com.ruthless.ui;
+package com.ruthless.ui.infobox;
 
 import com.ruthless.RuthlessConfig;
 import com.ruthless.RuthlessPlugin;
@@ -6,13 +6,11 @@ import com.ruthless.web.response.ItemOfTheDay;
 import com.ruthless.web.response.RuthlessSlayerTaskInfo;
 import lombok.Setter;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
-import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import javax.inject.Inject;
 import java.awt.*;
-import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
