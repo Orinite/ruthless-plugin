@@ -5,8 +5,7 @@ import javax.inject.Inject;
 
 import com.ruthless.event.ItemOfTheDayReceivedEvent;
 import com.ruthless.event.RuthlessSlayerTaskInfoReceivedEvent;
-import com.ruthless.ui.ItemOfTheDayInfoBox;
-import com.ruthless.ui.RuthlessSlayerTaskInfoBox;
+import com.ruthless.ui.RuthlessInfobox;
 import com.ruthless.web.RuthlessClient;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -19,9 +18,10 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.task.Schedule;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 
-import java.util.Objects;
+import java.time.temporal.ChronoUnit;
 
 @Slf4j
 @PluginDescriptor(
@@ -39,13 +39,15 @@ public class RuthlessPlugin extends Plugin
 	private @Inject InfoBoxManager infoBoxManager;
 	private @Inject ClientThread clientThread;
 
-	private RuthlessInfobox;
+	private RuthlessInfobox ruthlessInfobox;
 
 
 
 	@Override
 	protected void startUp() throws Exception
 	{
+		ruthlessInfobox = new RuthlessInfobox(this, config);
+		infoBoxManager.addInfoBox(ruthlessInfobox);
 		ruthlessClient.getItemOfTheDay();
 		if( client.getLocalPlayer() != null) {
 			this.attemptGetSlayerTask();
@@ -55,7 +57,7 @@ public class RuthlessPlugin extends Plugin
 	@Override
 	protected void shutDown() throws Exception
 	{
-		cleanupInfoboxes();
+		cleanupInfobox();
 	}
 
 	@Provides
@@ -81,39 +83,19 @@ public class RuthlessPlugin extends Plugin
 
 	@Subscribe
 	public void onItemOfTheDayReceivedEvent( ItemOfTheDayReceivedEvent event ) {
-		if (!config.showIotdInfobox()) {
-			return;
-		}
-		if (null != iotdInfoBox) {
-			infoBoxManager.removeInfoBox(iotdInfoBox);
-		}
-		iotdInfoBox = new ItemOfTheDayInfoBox(event.getItemOfTheDay(), this);
-		infoBoxManager.addInfoBox(iotdInfoBox);
+		ruthlessInfobox.setItemOfTheDay(event.getItemOfTheDay());
 
 	}
 
 	@Subscribe
 	public void onRuthlessSlayerTaskInfoReceivedEvent( RuthlessSlayerTaskInfoReceivedEvent event ) {
-		if (!config.showSlayertaskInfobox()) {
-			return;
-		}
-		if (null != ruthlessSlayerTaskInfoBox) {
-			infoBoxManager.removeInfoBox(ruthlessSlayerTaskInfoBox);
-		}
-		ruthlessSlayerTaskInfoBox = new RuthlessSlayerTaskInfoBox(event.getRuthlessSlayerTask(), this);
-		infoBoxManager.addInfoBox(ruthlessSlayerTaskInfoBox);
+		ruthlessInfobox.setRuthlessSlayerTaskInfo(event.getRuthlessSlayerTask());
 
 	}
 
-	private void cleanupInfoboxes() {
-		if (iotdInfoBox != null) {
-			infoBoxManager.removeInfoBox(iotdInfoBox);
-			iotdInfoBox = null;
-		}
-		if (ruthlessSlayerTaskInfoBox != null) {
-			infoBoxManager.removeInfoBox(ruthlessSlayerTaskInfoBox);
-			ruthlessSlayerTaskInfoBox = null;
-		}
+	private void cleanupInfobox() {
+		ruthlessInfobox = null;
+		infoBoxManager.removeIf(RuthlessInfobox.class::isInstance);
 	}
 
 	private boolean attemptGetSlayerTask() {
@@ -125,5 +107,23 @@ public class RuthlessPlugin extends Plugin
 		log.debug("Trying to get slayer task for {}", local.getName());
 		ruthlessClient.getCurrentSlayerTask(local.getName());
 		return true;
+	}
+
+	@Schedule(period = 1, unit= ChronoUnit.MINUTES)
+	public void iotdSchedule() {
+		log.debug("Scheduled iotd lookup");
+		ruthlessClient.getItemOfTheDay();
+	}
+
+	@Schedule(period=1, unit=ChronoUnit.MINUTES)
+	public void slayerTaskSchedule() {
+
+		Player local = client.getLocalPlayer();
+		if (local == null) {
+			//we aren't logged in, dont poll
+			return;
+		}
+		log.debug("Scheduling slayer task lookup");
+		ruthlessClient.getCurrentSlayerTask(local.getName());
 	}
 }

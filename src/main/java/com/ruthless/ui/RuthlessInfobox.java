@@ -24,10 +24,12 @@ public class RuthlessInfobox extends InfoBox {
     @Setter
     private RuthlessSlayerTaskInfo ruthlessSlayerTaskInfo;
 
-    private @Inject RuthlessConfig config;
+    private RuthlessConfig config;
 
-    public RuthlessInfobox(RuthlessPlugin plugin) {
-        super(ImageUtil.loadImageResource(RuthlessPlugin.class, "imgs/ruthless.png"), plugin);
+    @Inject
+    public RuthlessInfobox(RuthlessPlugin plugin, RuthlessConfig config) {
+        super(ImageUtil.loadImageResource(RuthlessPlugin.class, "imgs/ruthless_v2.png"), plugin);
+        this.config = config;
     }
 
     @Override
@@ -35,8 +37,21 @@ public class RuthlessInfobox extends InfoBox {
     {
         StringBuilder sb = new StringBuilder();
         if (itemOfTheDay != null && config.showIotdInInfobox()) {
-            sb.append("Item of the Day: " + itemOfTheDay.getItemName()).append("</br>")
-                    .append("Time left: " + getTimeLeft(itemOfTheDay.getExpirationTimestamp()));
+            sb.append("Item of the Day: " + itemOfTheDay.getItemName())
+                    .append("</br>")
+                    .append("Time left: " + getTimeLeft(itemOfTheDay.getExpirationTimestamp()))
+                    .append("</br>")
+                    .append("</br>");
+        }
+        if (ruthlessSlayerTaskInfo != null && config.showSlayertaskInInfobox()) {
+            if (ruthlessSlayerTaskInfo.getCurrentTask() == null) {
+                sb.append("Go get a slayer task from Ruth!");
+            } else {
+                sb.append("Slayer Task: " + ruthlessSlayerTaskInfo.getCurrentTask().getMonsterName())
+                        .append("</br>")
+                        .append("Slayer task time remaining: " + getTimeLeft(ruthlessSlayerTaskInfo.getCurrentTask().getExpiresAt()));
+            }
+
         }
 
 
@@ -45,11 +60,8 @@ public class RuthlessInfobox extends InfoBox {
 
     private String getTimeLeft(long expirationInSeconds) {
         Duration timeLeft;
-        if (itemOfTheDay == null) {
-            timeLeft = Duration.ZERO;
-        } else {
-            timeLeft = Duration.between(Instant.now(), new Date(itemOfTheDay.getExpirationTimestamp()*1000).toInstant());
-        }
+
+        timeLeft = Duration.between(Instant.now(), new Date(expirationInSeconds*1000).toInstant());
 
         return DurationFormatUtils.formatDuration(timeLeft.toMillis(), "H'h'm'm's's'");
     }
