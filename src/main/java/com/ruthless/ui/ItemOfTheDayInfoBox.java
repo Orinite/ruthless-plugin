@@ -1,20 +1,28 @@
 package com.ruthless.ui;
 
 import com.ruthless.RuthlessPlugin;
+import com.ruthless.api.RuthlessInfoBox;
 import com.ruthless.web.response.ItemOfTheDay;
+import lombok.Getter;
+import net.runelite.api.MenuAction;
+import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
+import net.runelite.client.ui.overlay.infobox.InfoBoxPriority;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import org.apache.commons.lang3.time.DurationFormatUtils;
+
 
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 
-public class ItemOfTheDayInfoBox extends InfoBox {
+public class ItemOfTheDayInfoBox extends RuthlessInfoBox {
 
+    @Getter
     private ItemOfTheDay itemOfTheDay;
 
     public ItemOfTheDayInfoBox(ItemOfTheDay itemOfTheDay, RuthlessPlugin plugin) {
