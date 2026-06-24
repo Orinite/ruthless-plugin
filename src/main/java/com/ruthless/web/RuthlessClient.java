@@ -3,12 +3,15 @@ package com.ruthless.web;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.ruthless.RuthlessPlugin;
-import com.ruthless.ui.ItemOfTheDayInfoBox;
+import com.ruthless.event.ItemOfTheDayReceivedEvent;
+import com.ruthless.event.RuthlessSlayerTaskInfoReceivedEvent;
 import com.ruthless.web.response.ItemOfTheDay;
-import lombok.extern.slf4j.Slf4j;
+import com.ruthless.web.response.RuthlessSlayerTaskInfo;
+import lombok.NonNull;import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.client.RuneLiteProperties;
-import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.eventbus.EventBus;
 import okhttp3.*;
 
 import javax.inject.Inject;
@@ -20,15 +23,14 @@ public class RuthlessClient {
     private OkHttpClient okHttpClient;
     private Gson gson;
 
-    @Inject
-    private Client client;
 
+    private @Inject Client client;
+    private @Inject ClientThread clientThread;
+    private @Inject EventBus eventBus;
     private RuthlessPlugin plugin;
-
     private String userAgent;
 
-    @Inject
-    private InfoBoxManager infoBoxManager;
+
 
     @Inject
     public RuthlessClient(Gson gson, RuthlessPlugin plugin, Client client, OkHttpClient okHttpClient)
@@ -90,7 +92,7 @@ public class RuthlessClient {
         this.okHttpClient.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                e.printStackTrace();
+                log.error("Error fetching Item of the Day", e);
             }
 
             @Override
@@ -98,9 +100,33 @@ public class RuthlessClient {
                 if (response.isSuccessful()) {
                     String body = response.body().string();
                     ItemOfTheDay iotdResponse = gson.fromJson(body, ItemOfTheDay.class);
-                    plugin.addIotdInfoBox(new ItemOfTheDayInfoBox(iotdResponse, plugin));
+                    postEvent(new ItemOfTheDayReceivedEvent(iotdResponse));
                 }
             }
         });
+    }
+
+    public void getCurrentSlayerTask(@NonNull String username) {
+        Request request = createRequest("member", username, "current_task");
+
+        this.okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("Error fetching Slayer task for member {}", username, e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String body = response.body().string();
+                    RuthlessSlayerTaskInfo slayerTaskResponse = gson.fromJson(body, RuthlessSlayerTaskInfo.class);
+                    postEvent(new RuthlessSlayerTaskInfoReceivedEvent(slayerTaskResponse));
+                }
+            }
+        });
+    }
+
+    private void postEvent(Object event) {
+        clientThread.invokeLater(() -> eventBus.post(event));
     }
 }
