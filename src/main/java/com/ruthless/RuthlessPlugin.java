@@ -39,8 +39,7 @@ public class RuthlessPlugin extends Plugin
 	private @Inject InfoBoxManager infoBoxManager;
 	private @Inject ClientThread clientThread;
 
-	private ItemOfTheDayInfoBox iotdInfoBox;
-	private RuthlessSlayerTaskInfoBox ruthlessSlayerTaskInfoBox;
+	private RuthlessInfobox;
 
 
 

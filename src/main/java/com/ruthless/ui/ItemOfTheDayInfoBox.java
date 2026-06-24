@@ -44,7 +44,7 @@ public class ItemOfTheDayInfoBox extends InfoBox {
     @Override
     public String getText() {
 
-        return getTimeLeft();
+        return "";
     }
 
     @Override
