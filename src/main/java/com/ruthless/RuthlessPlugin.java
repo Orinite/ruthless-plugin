@@ -7,6 +7,7 @@ import com.ruthless.event.ClanBroadcastEvent;
 import com.ruthless.event.ItemOfTheDayReceivedEvent;
 import com.ruthless.event.MemberAPIKeyInvalidEvent;
 import com.ruthless.event.RuthlessSlayerTaskInfoReceivedEvent;
+import com.ruthless.eventprocessor.ChatEventProcessor;
 import com.ruthless.ui.infobox.RuthlessInfobox;
 import com.ruthless.ui.overlay.MemberAPIKeyInvalidOverlay;
 import com.ruthless.utils.ClanBroadcastValidator;
@@ -23,6 +24,7 @@ import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
@@ -53,6 +55,8 @@ public class RuthlessPlugin extends Plugin
 	private @Inject ChatMessageBuilder chatMessageBuilder;
 	private @Inject ClanBroadcastValidator clanBroadcastValidator;
 	private @Inject ChatMessageManager chatMessageManager;
+	private @Inject EventBus eventBus;
+	private @Inject ChatEventProcessor chatEventProcessor;
 
 	private RuthlessInfobox ruthlessInfobox;
 	private boolean sentClanBroadcast;
@@ -63,6 +67,7 @@ public class RuthlessPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
+
 		ruthlessInfobox = new RuthlessInfobox(this, config);
 		infoBoxManager.addInfoBox(ruthlessInfobox);
 		ruthlessClient.getItemOfTheDay();
@@ -71,12 +76,16 @@ public class RuthlessPlugin extends Plugin
 			this.attemptGetSlayerTask();
 		}
 		memberAPIKeyValid = !config.memberAPIKey().isEmpty();
+
+		//register event processor(s)
+		eventBus.register(chatEventProcessor);
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
 		cleanupInfobox();
+		eventBus.unregister(chatEventProcessor);
 	}
 
 	@Provides
@@ -173,26 +182,26 @@ public class RuthlessPlugin extends Plugin
 		return true;
 	}
 
+	/**
+	 * Scheduled polling for new information since we don't use Websockets.
+	 */
 	@Schedule(
 		period = 1,
 		unit= ChronoUnit.MINUTES
 	)
 	public void iotdSchedule() {
-		log.debug("Scheduled Ruthless iotd lookup");
-		ruthlessClient.getItemOfTheDay();
-	}
-
-	@Schedule(
-		period = 1,
-		unit=ChronoUnit.MINUTES
-	)
-	public void slayerTaskSchedule() {
-
-		Player local = client.getLocalPlayer();
-		if (local == null) {
-			//we aren't logged in, dont poll
+		if (client.getGameState() != GameState.LOGGED_IN) {
+			//we aren't logged in, dont poll.
 			return;
 		}
+		Player local = client.getLocalPlayer();
+		if (local == null) {
+			//player info isnt loaded, dont poll.
+			return;
+		}
+		log.debug("Scheduling Ruthless iotd lookup");
+		ruthlessClient.getItemOfTheDay();
+
 		log.debug("Scheduling slayer task lookup");
 		ruthlessClient.getCurrentSlayerTask(local.getName());
 	}
