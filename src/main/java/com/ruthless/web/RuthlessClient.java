@@ -7,9 +7,9 @@ import com.ruthless.RuthlessPlugin;
 import com.ruthless.event.ClanBroadcastEvent;
 import com.ruthless.event.ItemOfTheDayReceivedEvent;
 import com.ruthless.event.RuthlessSlayerTaskInfoReceivedEvent;
-import com.ruthless.utils.ClanBroadcastValidator;
 import com.ruthless.utils.Constants;
 import com.ruthless.web.interceptor.RuthlessApiInterceptor;
+import com.ruthless.web.request.RuthlessMemberBossTimeRequest;
 import com.ruthless.web.response.ClanBroadcast;
 import com.ruthless.web.response.ItemOfTheDay;
 import com.ruthless.web.response.RuthlessSlayerTaskInfo;
@@ -67,6 +67,17 @@ public class RuthlessClient {
         return new Request.Builder()
                 .header("User-Agent", userAgent)
                 .header("x-api-key", config.memberAPIKey())
+                .url(url)
+                .build();
+    }
+
+    private Request createPostRequest(Object body, String... pathSegments)
+    {
+        HttpUrl url = buildUrl(pathSegments);
+        return new Request.Builder()
+                .header("User-Agent", userAgent)
+                .header("x-api-key", config.memberAPIKey())
+                .post(RequestBody.create(MediaType.get("application/json"), gson.toJson(body)))
                 .url(url)
                 .build();
     }
@@ -163,6 +174,28 @@ public class RuthlessClient {
                     String body = response.body().string();
                     ClanBroadcast clanBroadcast = gson.fromJson(body, ClanBroadcast.class);
                     postEvent(new ClanBroadcastEvent(clanBroadcast));
+                }
+                response.close();
+            }
+        });
+    }
+
+    public void submitBossTimeRequest(RuthlessMemberBossTimeRequest ruthlessMemberBossTimeRequest) {
+        Request request = createPostRequest(ruthlessMemberBossTimeRequest, "clans", "submit_time");
+
+        this.okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("Error submitting bosstime request", e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                log.debug("Sent bosstime request");
+                if (response.code() == 201) {
+                    log.debug("Boss time recorded successfully.");
+                } else {
+                    log.debug("Error recording boss time");
                 }
                 response.close();
             }

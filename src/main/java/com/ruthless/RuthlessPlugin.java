@@ -94,6 +94,7 @@ public class RuthlessPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		cleanupInfobox();
+		overlayManager.removeIf(MemberAPIKeyInvalidOverlay.class::isInstance);
 		eventBus.unregister(chatEventProcessor);
 	}
 
