@@ -60,7 +60,7 @@ public class RuthlessInfobox extends InfoBox {
     }
 
     private String getTimeLeft(long expirationInSeconds) {
-        Duration timeLeft = Duration.between(Instant.now(), new Date(expirationInSeconds*1000).toInstant());
+        Duration timeLeft = Duration.between(Instant.now(), Instant.ofEpochSecond(expirationInSeconds));
 
         if (timeLeft.isNegative()) {
             return "Expired!";
