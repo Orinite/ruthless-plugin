@@ -46,8 +46,8 @@ import java.util.Objects;
 @Slf4j
 @PluginDescriptor(
 	name = "Ruthless Clan",
-		tags = {"ruthless", "clan"},
-		description = "Automates things for Ruthless clan."
+	tags = {"ruthless", "clan"},
+	description = "Automates things for Ruthless clan."
 )
 public class RuthlessPlugin extends Plugin
 {
