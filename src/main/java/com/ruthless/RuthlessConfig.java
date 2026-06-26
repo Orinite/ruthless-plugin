@@ -23,7 +23,7 @@ public interface RuthlessConfig extends Config
 	@ConfigItem(
 		keyName = MEMBER_API_KEY,
 		name = "Member API Key",
-		description = "API Key to verify the member. If you need one, please generate in Discord server",
+		description = "Provides verification. Use /api request-key in #commands in Ruthless discord.",
 		secret = true,
 		position = 1,
 		section = generalSettings
@@ -52,7 +52,7 @@ public interface RuthlessConfig extends Config
 	@ConfigItem(
 			keyName = SHOW_SLAYER_INFO,
 			name = "Show Ruthless Slayertask Infobox",
-			description = "Show the Slayertask infobox in the UI",
+			description = "Show the Slayertask information in Ruthless Infobox",
 			position = 4,
 			section = infoboxSettings
 	)

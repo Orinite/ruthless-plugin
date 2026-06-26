@@ -83,6 +83,8 @@ public class ChatEventProcessor {
                                 String.valueOf(lastTiming),
                                 String.valueOf(lastPb),
                                 lastKc,
+                                client.getWorld(),
+                                1,
                                 local.getName(),
                                 local.getName()
                         )

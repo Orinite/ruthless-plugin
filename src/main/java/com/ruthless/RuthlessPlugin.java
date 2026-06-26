@@ -8,6 +8,7 @@ import com.ruthless.event.ItemOfTheDayReceivedEvent;
 import com.ruthless.event.MemberAPIKeyInvalidEvent;
 import com.ruthless.event.RuthlessSlayerTaskInfoReceivedEvent;
 import com.ruthless.eventprocessor.ChatEventProcessor;
+import com.ruthless.eventprocessor.LootReceivedProcessor;
 import com.ruthless.ui.infobox.RuthlessInfobox;
 import com.ruthless.ui.overlay.MemberAPIKeyInvalidOverlay;
 import com.ruthless.utils.ClanBroadcastValidator;
@@ -66,6 +67,7 @@ public class RuthlessPlugin extends Plugin
 	private @Inject ChatMessageManager chatMessageManager;
 	private @Inject EventBus eventBus;
 	private @Inject ChatEventProcessor chatEventProcessor;
+	private @Inject LootReceivedProcessor lootReceivedProcessor;
 
 	private RuthlessInfobox ruthlessInfobox;
 	private boolean sentClanBroadcast;
@@ -76,18 +78,21 @@ public class RuthlessPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
+		//register event processor(s)
+		eventBus.register(chatEventProcessor);
+		eventBus.register(lootReceivedProcessor);
 
 		ruthlessInfobox = new RuthlessInfobox(this, config);
 		infoBoxManager.addInfoBox(ruthlessInfobox);
 		ruthlessClient.getItemOfTheDay();
+		ruthlessClient.getClanWhitelist();
 		sentClanBroadcast = false;
 		if( client.getLocalPlayer() != null) {
 			this.attemptGetSlayerTask();
 		}
 		memberAPIKeyValid = !config.memberAPIKey().isEmpty();
 
-		//register event processor(s)
-		eventBus.register(chatEventProcessor);
+
 	}
 
 	@Override
@@ -96,6 +101,7 @@ public class RuthlessPlugin extends Plugin
 		cleanupInfobox();
 		overlayManager.removeIf(MemberAPIKeyInvalidOverlay.class::isInstance);
 		eventBus.unregister(chatEventProcessor);
+		eventBus.unregister(lootReceivedProcessor);
 	}
 
 	@Provides
@@ -240,5 +246,16 @@ public class RuthlessPlugin extends Plugin
 
 		log.debug("Scheduling slayer task lookup");
 		ruthlessClient.getCurrentSlayerTask(local.getName());
+	}
+
+	@Schedule(
+			period = 5,
+			unit = ChronoUnit.MINUTES
+	)
+	public void refetchWhitelist() {
+		if (client.getGameState() != GameState.LOGGED_IN) {
+			return;
+		}
+		ruthlessClient.getClanWhitelist();
 	}
 }

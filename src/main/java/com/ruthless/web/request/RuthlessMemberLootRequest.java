@@ -1,16 +1,20 @@
 package com.ruthless.web.request;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @AllArgsConstructor
-public class RuthlessMemberBossTimeRequest {
-    private String guid;
+@Builder
+public class RuthlessMemberLootRequest {
+
+    private List<RuthlessMemberLootItem> items;
     private String sourceName;
-    private String time;
-    private String personalBest;
-    private int killcount;
     private int world;
     private int groupSize;
     private String players;
     private String addedBy;
+
 }
