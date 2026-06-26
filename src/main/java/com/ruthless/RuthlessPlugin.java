@@ -141,20 +141,27 @@ public class RuthlessPlugin extends Plugin
 	public void onRuthlessSlayerTaskInfoReceivedEvent( RuthlessSlayerTaskInfoReceivedEvent event ) {
 		RuthlessSlayerTaskInfo oldTaskInfo = ruthlessInfobox.getRuthlessSlayerTaskInfo();
 		RuthlessSlayerTaskInfo newTaskInfo = event.getRuthlessSlayerTask();
-		if (config.showNewSlayertaskChatNotification() && !Objects.nonNull(oldTaskInfo) && slayerTaskValidator.valid(newTaskInfo)) {
+
+		if (config.showNewSlayertaskChatNotification()
+				&& !Objects.isNull(oldTaskInfo) //make sure this isn't the first time we have received the message.
+				&& slayerTaskValidator.valid(newTaskInfo)
+				&& (Objects.isNull(oldTaskInfo.getCurrentTask() ) || oldTaskInfo.getCurrentTask().getTaskId() != newTaskInfo.getCurrentTask().getTaskId()))
+		{
 			ChatMessageBuilder cmd = new ChatMessageBuilder();
 			cmd.append(
-					Color.BLACK,
-					String.format("[Ruthless] New Task received from Ruth. Task: %s. Expiration: %s",
+				Color.DARK_GRAY,
+				String.format("[Ruthless] New Task received from Ruth. Task: %s. Expiration: %s",
 						newTaskInfo.getCurrentTask().getMonsterName(),
 						TimeUtils.convertTimeToDate(newTaskInfo.getCurrentTask().getExpiresAt()
-					))
+						))
 			);
 			chatMessageManager.queue(QueuedMessage.builder()
-					.type(ChatMessageType.GAMEMESSAGE)
-					.runeLiteFormattedMessage(cmd.build())
-					.build()
+				.type(ChatMessageType.GAMEMESSAGE)
+				.runeLiteFormattedMessage(cmd.build())
+				.build()
 			);
+
+
 		}
 		ruthlessInfobox.setRuthlessSlayerTaskInfo(newTaskInfo);
 
