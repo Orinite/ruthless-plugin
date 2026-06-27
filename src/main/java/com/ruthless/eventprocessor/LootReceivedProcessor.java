@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class LootReceivedProcessor {
 
-    private Set<String> whitelistedSources;
-    private Set<Integer> whitelistedItems;
+    private final Set<String> whitelistedSources = new HashSet<>();;
+    private final Set<Integer> whitelistedItems = new HashSet<>();;
 
     private @Inject RuthlessClient ruthlessClient;
     private @Inject Client client;
@@ -34,7 +34,7 @@ public class LootReceivedProcessor {
 
     @Subscribe
     public void onLootReceived(LootReceived lootReceived) {
-        if (whitelistedSources == null || whitelistedItems == null) {
+        if (whitelistedSources.isEmpty()|| whitelistedItems.isEmpty()) {
             log.debug("Clan whitelist isn't set, drop the message for now.");
             ruthlessClient.getClanWhitelist();
             return;
@@ -55,12 +55,14 @@ public class LootReceivedProcessor {
 
     @Subscribe
     public void onClanWhitelistReceivedEvent(ClanWhitelistReceivedEvent clanWhitelistReceivedEvent ) {
-        whitelistedItems = new HashSet<Integer>();
-        whitelistedSources = new HashSet<String>();
         ClanWhitelist whitelist = clanWhitelistReceivedEvent.getClanWhitelist();
+
+        //reset
+        whitelistedSources.clear();
+        whitelistedItems.clear();
+
         whitelist.getItems().forEach(item -> whitelistedItems.add(item.getWikiItemId()));
         whitelist.getSources().forEach(source -> whitelistedSources.add(source.getName()));
-
     }
 
     private boolean validLoot(LootReceived lootReceived) {

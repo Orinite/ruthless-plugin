@@ -195,8 +195,8 @@ public class RuthlessPlugin extends Plugin
 	}
 
 	private void cleanupInfobox() {
-		ruthlessInfobox = null;
 		infoBoxManager.removeIf(RuthlessInfobox.class::isInstance);
+		ruthlessInfobox = null;
 	}
 
 	private boolean attemptGetSlayerTask() {
@@ -241,11 +241,16 @@ public class RuthlessPlugin extends Plugin
 			//player info isnt loaded, dont poll.
 			return;
 		}
-		log.debug("Scheduling Ruthless iotd lookup");
-		ruthlessClient.getItemOfTheDay();
 
-		log.debug("Scheduling slayer task lookup");
-		ruthlessClient.getCurrentSlayerTask(local.getName());
+		if(config.showIotdInInfobox()) {
+			log.debug("Scheduling Ruthless iotd lookup");
+			ruthlessClient.getItemOfTheDay();
+		}
+
+		if(config.showSlayertaskInInfobox()) {
+			log.debug("Scheduling slayer task lookup");
+			ruthlessClient.getCurrentSlayerTask(local.getName());
+		}
 	}
 
 	@Schedule(
