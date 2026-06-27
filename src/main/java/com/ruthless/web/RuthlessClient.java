@@ -5,12 +5,15 @@ import com.google.gson.Gson;
 import com.ruthless.RuthlessConfig;
 import com.ruthless.RuthlessPlugin;
 import com.ruthless.event.ClanBroadcastEvent;
+import com.ruthless.event.ClanWhitelistReceivedEvent;
 import com.ruthless.event.ItemOfTheDayReceivedEvent;
 import com.ruthless.event.RuthlessSlayerTaskInfoReceivedEvent;
-import com.ruthless.utils.ClanBroadcastValidator;
 import com.ruthless.utils.Constants;
 import com.ruthless.web.interceptor.RuthlessApiInterceptor;
+import com.ruthless.web.request.RuthlessMemberBossTimeRequest;
+import com.ruthless.web.request.RuthlessMemberLootRequest;
 import com.ruthless.web.response.ClanBroadcast;
+import com.ruthless.web.response.ClanWhitelist;
 import com.ruthless.web.response.ItemOfTheDay;
 import com.ruthless.web.response.RuthlessSlayerTaskInfo;
 import lombok.NonNull;import lombok.extern.slf4j.Slf4j;
@@ -67,6 +70,19 @@ public class RuthlessClient {
         return new Request.Builder()
                 .header("User-Agent", userAgent)
                 .header("x-api-key", config.memberAPIKey())
+                .url(url)
+                .build();
+    }
+
+    private Request createPostRequest(Object body, String... pathSegments)
+    {
+        String jsonBody = gson.toJson(body);
+        log.debug("Ruthless POST Body: {}", jsonBody);
+        HttpUrl url = buildUrl(pathSegments);
+        return new Request.Builder()
+                .header("User-Agent", userAgent)
+                .header("x-api-key", config.memberAPIKey())
+                .post(RequestBody.create(MediaType.get("application/json"), jsonBody))
                 .url(url)
                 .build();
     }
@@ -163,6 +179,75 @@ public class RuthlessClient {
                     String body = response.body().string();
                     ClanBroadcast clanBroadcast = gson.fromJson(body, ClanBroadcast.class);
                     postEvent(new ClanBroadcastEvent(clanBroadcast));
+                }
+                response.close();
+            }
+        });
+    }
+
+    public void getClanWhitelist() {
+        Request request = createRequest("clans", Constants.RUTHLESS_DISCORD_GUILD_ID, "whitelists");
+
+        this.okHttpClient.newCall(request).enqueue(new Callback() {
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("Error fetching whitelist for clan", e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String body = response.body().string();
+                    ClanWhitelist clanWhitelist = gson.fromJson(body, ClanWhitelist.class);
+                    postEvent(new ClanWhitelistReceivedEvent(clanWhitelist));
+                }
+                response.close();
+            }
+        });
+    }
+
+    public void submitBossTimeRequest(RuthlessMemberBossTimeRequest ruthlessMemberBossTimeRequest) {
+        Request request = createPostRequest(ruthlessMemberBossTimeRequest, "clans", "submit_time");
+
+        this.okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("Error submitting bosstime request", e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                log.debug("Sent bosstime request");
+                if (response.code() == 201) {
+                    log.debug("Boss time recorded successfully.");
+                } else {
+                    log.debug("Error recording boss time");
+                }
+                response.close();
+            }
+        });
+    }
+
+
+
+    public void submitLoot(RuthlessMemberLootRequest ruthlessMemberLootRequest) {
+
+        Request request = createPostRequest(ruthlessMemberLootRequest, "clans", "submit_item");
+
+        this.okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("Error submitting item request", e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                log.debug("Sent item request");
+                if (response.code() == 201) {
+                    log.debug("Clan item recorded successfully.");
+                } else {
+                    log.debug("Error recording item. Response: {}. error: {}", response.code(), response.body().string());
                 }
                 response.close();
             }

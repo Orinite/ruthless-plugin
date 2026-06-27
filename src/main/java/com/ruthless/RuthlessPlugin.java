@@ -8,17 +8,24 @@ import com.ruthless.event.ItemOfTheDayReceivedEvent;
 import com.ruthless.event.MemberAPIKeyInvalidEvent;
 import com.ruthless.event.RuthlessSlayerTaskInfoReceivedEvent;
 import com.ruthless.eventprocessor.ChatEventProcessor;
+import com.ruthless.eventprocessor.LootReceivedProcessor;
 import com.ruthless.ui.infobox.RuthlessInfobox;
 import com.ruthless.ui.overlay.MemberAPIKeyInvalidOverlay;
 import com.ruthless.utils.ClanBroadcastValidator;
+import com.ruthless.utils.SlayerTaskValidator;
+import com.ruthless.utils.TimeUtils;
 import com.ruthless.web.RuthlessClient;
 import com.ruthless.web.response.ClanBroadcast;
+import com.ruthless.web.response.RuthlessSlayerTask;
+import com.ruthless.web.response.RuthlessSlayerTaskInfo;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
@@ -33,13 +40,15 @@ import net.runelite.client.task.Schedule;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 
+import java.awt.*;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 
 @Slf4j
 @PluginDescriptor(
 	name = "Ruthless Clan",
-		tags = {"ruthless", "clan"},
-		description = "Automates things for Ruthless clan."
+	tags = {"ruthless", "clan"},
+	description = "Automates things for Ruthless clan."
 )
 public class RuthlessPlugin extends Plugin
 {
@@ -54,9 +63,11 @@ public class RuthlessPlugin extends Plugin
 	private @Inject MemberAPIKeyInvalidOverlay memberAPIKeyInvalidOverlay;
 	private @Inject ChatMessageBuilder chatMessageBuilder;
 	private @Inject ClanBroadcastValidator clanBroadcastValidator;
+	private @Inject SlayerTaskValidator slayerTaskValidator;
 	private @Inject ChatMessageManager chatMessageManager;
 	private @Inject EventBus eventBus;
 	private @Inject ChatEventProcessor chatEventProcessor;
+	private @Inject LootReceivedProcessor lootReceivedProcessor;
 
 	private RuthlessInfobox ruthlessInfobox;
 	private boolean sentClanBroadcast;
@@ -67,25 +78,30 @@ public class RuthlessPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
+		//register event processor(s)
+		eventBus.register(chatEventProcessor);
+		eventBus.register(lootReceivedProcessor);
 
 		ruthlessInfobox = new RuthlessInfobox(this, config);
 		infoBoxManager.addInfoBox(ruthlessInfobox);
 		ruthlessClient.getItemOfTheDay();
+		ruthlessClient.getClanWhitelist();
 		sentClanBroadcast = false;
 		if( client.getLocalPlayer() != null) {
 			this.attemptGetSlayerTask();
 		}
 		memberAPIKeyValid = !config.memberAPIKey().isEmpty();
 
-		//register event processor(s)
-		eventBus.register(chatEventProcessor);
+
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
 		cleanupInfobox();
+		overlayManager.removeIf(MemberAPIKeyInvalidOverlay.class::isInstance);
 		eventBus.unregister(chatEventProcessor);
+		eventBus.unregister(lootReceivedProcessor);
 	}
 
 	@Provides
@@ -130,7 +146,32 @@ public class RuthlessPlugin extends Plugin
 
 	@Subscribe
 	public void onRuthlessSlayerTaskInfoReceivedEvent( RuthlessSlayerTaskInfoReceivedEvent event ) {
-		ruthlessInfobox.setRuthlessSlayerTaskInfo(event.getRuthlessSlayerTask());
+		RuthlessSlayerTaskInfo oldTaskInfo = ruthlessInfobox.getRuthlessSlayerTaskInfo();
+		RuthlessSlayerTaskInfo newTaskInfo = event.getRuthlessSlayerTask();
+
+		if (config.showNewSlayertaskChatNotification()
+				&& !Objects.isNull(oldTaskInfo) //make sure this isn't the first time we have received the message.
+				&& slayerTaskValidator.valid(newTaskInfo)
+				&& (Objects.isNull(oldTaskInfo.getCurrentTask() ) || oldTaskInfo.getCurrentTask().getTaskId() != newTaskInfo.getCurrentTask().getTaskId()))
+		{
+			ChatMessageBuilder cmd = new ChatMessageBuilder();
+			cmd.append(
+				Color.DARK_GRAY,
+				String.format("[Ruthless] New Task received from Ruth. Task: %s. Expiration: %s",
+						newTaskInfo.getCurrentTask().getMonsterName(),
+						TimeUtils.convertTimeToDate(newTaskInfo.getCurrentTask().getExpiresAt()
+						))
+			);
+			chatMessageManager.queue(QueuedMessage.builder()
+				.type(ChatMessageType.GAMEMESSAGE)
+				.runeLiteFormattedMessage(cmd.build())
+				.build()
+			);
+
+
+		}
+		ruthlessInfobox.setRuthlessSlayerTaskInfo(newTaskInfo);
+
 	}
 
 	@Subscribe
@@ -143,7 +184,8 @@ public class RuthlessPlugin extends Plugin
 			cmd.append("[Ruthless] ").append(broadcast.getMessage());
 			chatMessageManager.queue(QueuedMessage.builder()
 					.type(ChatMessageType.BROADCAST)
-					.runeLiteFormattedMessage(cmd.build()).build());
+					.runeLiteFormattedMessage(cmd.build()).build()
+			);
 		}
 	}
 
@@ -153,8 +195,8 @@ public class RuthlessPlugin extends Plugin
 	}
 
 	private void cleanupInfobox() {
-		ruthlessInfobox = null;
 		infoBoxManager.removeIf(RuthlessInfobox.class::isInstance);
+		ruthlessInfobox = null;
 	}
 
 	private boolean attemptGetSlayerTask() {
@@ -183,7 +225,7 @@ public class RuthlessPlugin extends Plugin
 	}
 
 	/**
-	 * Scheduled polling for new information since we don't use Websockets.
+	 * Scheduled polling for new information since we don't use Websockets... yet
 	 */
 	@Schedule(
 		period = 1,
@@ -199,10 +241,26 @@ public class RuthlessPlugin extends Plugin
 			//player info isnt loaded, dont poll.
 			return;
 		}
-		log.debug("Scheduling Ruthless iotd lookup");
-		ruthlessClient.getItemOfTheDay();
 
-		log.debug("Scheduling slayer task lookup");
-		ruthlessClient.getCurrentSlayerTask(local.getName());
+		if(config.showIotdInInfobox()) {
+			log.debug("Scheduling Ruthless iotd lookup");
+			ruthlessClient.getItemOfTheDay();
+		}
+
+		if(config.showSlayertaskInInfobox()) {
+			log.debug("Scheduling slayer task lookup");
+			ruthlessClient.getCurrentSlayerTask(local.getName());
+		}
+	}
+
+	@Schedule(
+			period = 5,
+			unit = ChronoUnit.MINUTES
+	)
+	public void refetchWhitelist() {
+		if (client.getGameState() != GameState.LOGGED_IN) {
+			return;
+		}
+		ruthlessClient.getClanWhitelist();
 	}
 }

@@ -4,6 +4,7 @@ import com.ruthless.RuthlessConfig;
 import com.ruthless.RuthlessPlugin;
 import com.ruthless.web.response.ItemOfTheDay;
 import com.ruthless.web.response.RuthlessSlayerTaskInfo;
+import lombok.Getter;
 import lombok.Setter;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
 import net.runelite.client.util.ImageUtil;
@@ -19,7 +20,9 @@ public class RuthlessInfobox extends InfoBox {
 
     @Setter
     private ItemOfTheDay itemOfTheDay;
+
     @Setter
+    @Getter
     private RuthlessSlayerTaskInfo ruthlessSlayerTaskInfo;
 
     private RuthlessConfig config;
@@ -57,9 +60,11 @@ public class RuthlessInfobox extends InfoBox {
     }
 
     private String getTimeLeft(long expirationInSeconds) {
-        Duration timeLeft;
+        Duration timeLeft = Duration.between(Instant.now(), Instant.ofEpochSecond(expirationInSeconds));
 
-        timeLeft = Duration.between(Instant.now(), new Date(expirationInSeconds*1000).toInstant());
+        if (timeLeft.isNegative()) {
+            return "Expired!";
+        }
 
         return DurationFormatUtils.formatDuration(timeLeft.toMillis(), "H'h'm'm's's'");
     }
