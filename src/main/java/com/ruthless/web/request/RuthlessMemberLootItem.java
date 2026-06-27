@@ -7,4 +7,5 @@ public class RuthlessMemberLootItem {
 
     private int wikiItemId;
     private long quantity;
+    private String name;
 }

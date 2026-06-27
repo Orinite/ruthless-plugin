@@ -10,6 +10,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemStack;
 import net.runelite.client.plugins.loottracker.LootReceived;
 import net.runelite.client.task.Schedule;
@@ -29,6 +30,7 @@ public class LootReceivedProcessor {
 
     private @Inject RuthlessClient ruthlessClient;
     private @Inject Client client;
+    private @Inject ItemManager itemManager;
 
     @Subscribe
     public void onLootReceived(LootReceived lootReceived) {
@@ -40,7 +42,7 @@ public class LootReceivedProcessor {
         if (validLoot(lootReceived)) {
             Player local = client.getLocalPlayer();
             RuthlessMemberLootRequest request = RuthlessMemberLootRequest.builder()
-                    .items(lootReceived.getItems().stream().map(item -> new RuthlessMemberLootItem(item.getId(), item.getQuantity())).collect(Collectors.toCollection(ArrayList::new)))
+                    .items(lootReceived.getItems().stream().map(item -> new RuthlessMemberLootItem(item.getId(), item.getQuantity(), itemManager.getItemComposition(item.getId()).getName())).collect(Collectors.toCollection(ArrayList::new)))
                     .sourceName(lootReceived.getName())
                     .world(client.getWorld())
                     .groupSize(1)
