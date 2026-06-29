@@ -42,11 +42,7 @@ public class ChatEventProcessor {
     private @Inject RuthlessClient ruthlessClient;
     private @Inject Client client;
 
-    @Subscribe
     public void onChatMessage( ChatMessage chatMessage ) {
-        if (chatMessage.getType() != ChatMessageType.GAMEMESSAGE) {
-            return;
-        }
 
         String message = chatMessage.getMessage();
         Matcher matcher = KILLCOUNT_PATTERN.matcher(message);

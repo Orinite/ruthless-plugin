@@ -9,6 +9,7 @@ import com.ruthless.event.MemberAPIKeyInvalidEvent;
 import com.ruthless.event.RuthlessSlayerTaskInfoReceivedEvent;
 import com.ruthless.eventprocessor.ChatEventProcessor;
 import com.ruthless.eventprocessor.LootReceivedProcessor;
+import com.ruthless.eventprocessor.PetEventProcessor;
 import com.ruthless.ui.infobox.RuthlessInfobox;
 import com.ruthless.ui.overlay.MemberAPIKeyInvalidOverlay;
 import com.ruthless.utils.ClanBroadcastValidator;
@@ -23,8 +24,7 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
-import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.events.*;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageBuilder;
@@ -68,6 +68,7 @@ public class RuthlessPlugin extends Plugin
 	private @Inject EventBus eventBus;
 	private @Inject ChatEventProcessor chatEventProcessor;
 	private @Inject LootReceivedProcessor lootReceivedProcessor;
+	private @Inject PetEventProcessor petEventProcessor;
 
 	private RuthlessInfobox ruthlessInfobox;
 	private boolean sentClanBroadcast;
@@ -188,6 +189,36 @@ public class RuthlessPlugin extends Plugin
 			);
 		}
 	}
+
+	@Subscribe
+	public void onChatMessage(ChatMessage chatMessage) {
+		String source = chatMessage.getName() != null && !chatMessage.getName().isEmpty() ? chatMessage.getName() : chatMessage.getSender();
+		switch (chatMessage.getType())
+		{
+			case GAMEMESSAGE:
+				if ("runelite".equals(source)) {
+					// filter out plugin-sourced chat messages
+					return;
+				}
+				chatEventProcessor.onChatMessage(chatMessage);
+				petEventProcessor.onChatMessage(chatMessage.getMessage());
+				break;
+			case CLAN_GIM_MESSAGE:
+				petEventProcessor.onClanNotification(chatMessage.getMessage());
+				break;
+		}
+	}
+
+	@Subscribe
+	public void onScriptPreFired(ScriptPreFired event) {
+		petEventProcessor.onScript(event.getScriptId());
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick event) {
+		petEventProcessor.onTick();
+	}
+
 
 	@Subscribe
 	public void onMemberAPIKeyInvalidEvent(MemberAPIKeyInvalidEvent event) {
