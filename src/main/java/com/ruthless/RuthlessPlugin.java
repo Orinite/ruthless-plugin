@@ -5,7 +5,8 @@ import javax.inject.Inject;
 
 import com.ruthless.event.ClanBroadcastEvent;
 import com.ruthless.event.MemberAPIKeyInvalidEvent;
-import com.ruthless.eventprocessor.ChatEventProcessor;
+import com.ruthless.eventprocessor.BossKillChatEventProcessor;
+import com.ruthless.eventprocessor.DonationChatEventProcessor;
 import com.ruthless.eventprocessor.LootReceivedProcessor;
 import com.ruthless.ui.infobox.RuthlessInfoboxManager;
 import com.ruthless.ui.overlay.MemberAPIKeyInvalidOverlay;
@@ -55,7 +56,8 @@ public class RuthlessPlugin extends Plugin
 	private @Inject ClanBroadcastValidator clanBroadcastValidator;
 	private @Inject ChatMessageManager chatMessageManager;
 	private @Inject EventBus eventBus;
-	private @Inject ChatEventProcessor chatEventProcessor;
+	private @Inject BossKillChatEventProcessor bossKillChatEventProcessor;
+	private @Inject DonationChatEventProcessor donationChatEventProcessor;
 	private @Inject LootReceivedProcessor lootReceivedProcessor;
 	private @Inject RuthlessInfoboxManager ruthlessInfoboxManager;
 
@@ -68,8 +70,9 @@ public class RuthlessPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		//register event processor(s)
-		eventBus.register(chatEventProcessor);
+		eventBus.register(bossKillChatEventProcessor);
 		eventBus.register(lootReceivedProcessor);
+		eventBus.register(donationChatEventProcessor);
 
 		ruthlessClient.getClanWhitelist();
 		sentClanBroadcast = false;
@@ -80,8 +83,9 @@ public class RuthlessPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		overlayManager.removeIf(MemberAPIKeyInvalidOverlay.class::isInstance);
-		eventBus.unregister(chatEventProcessor);
+		eventBus.unregister(bossKillChatEventProcessor);
 		eventBus.unregister(lootReceivedProcessor);
+		eventBus.unregister(donationChatEventProcessor);
 	}
 
 	@Provides

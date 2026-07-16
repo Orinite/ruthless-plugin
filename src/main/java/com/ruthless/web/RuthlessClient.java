@@ -8,6 +8,7 @@ import com.ruthless.event.ClanBroadcastEvent;
 import com.ruthless.event.ClanWhitelistReceivedEvent;
 import com.ruthless.web.interceptor.RuthlessApiInterceptor;
 import com.ruthless.web.request.BossKillSubmission;
+import com.ruthless.web.request.DonationSubmission;
 import com.ruthless.web.request.LootDropSubmission;
 import com.ruthless.web.response.ClanBroadcast;
 import com.ruthless.web.response.ClanWhitelist;
@@ -113,7 +114,7 @@ public class RuthlessClient {
     }
 
     public void getClanBroadcast() {
-        Request request = createRequest("clans", config.clanId().toString(), "broadcasts", "latest");
+        Request request = createRequest("clans", String.valueOf(config.clanId()), "broadcasts", "latest");
 
         this.okHttpClient.newCall(request).enqueue(new Callback() {
             @Override
@@ -139,7 +140,7 @@ public class RuthlessClient {
     }
 
     public void getClanWhitelist() {
-        Request request = createRequest("clans", config.clanId().toString(), "whitelists");
+        Request request = createRequest("clans", String.valueOf(config.clanId()), "whitelists");
 
         this.okHttpClient.newCall(request).enqueue(new Callback() {
 
@@ -202,6 +203,28 @@ public class RuthlessClient {
                     log.debug("Clan item recorded successfully.");
                 } else {
                     log.debug("Error recording item. Response: {}. error: {}", response.code(), response.body().string());
+                }
+                response.close();
+            }
+        });
+    }
+
+    public void submitDonation(DonationSubmission donationSubmission) {
+        Request request = createPostRequest(donationSubmission, "clans", String.valueOf(config.clanId()), "donations");
+
+        this.okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("Error submitting item request", e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                log.debug("Sent item request");
+                if (response.isSuccessful()) {
+                    log.debug("Clan Donation recorded successfully.");
+                } else {
+                    log.debug("Error recording Donation. Response: {}. error: {}", response.code(), response.body().string());
                 }
                 response.close();
             }

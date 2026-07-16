@@ -2,6 +2,7 @@ package com.ruthless.eventprocessor;
 
 import com.ruthless.event.ClanWhitelistReceivedEvent;
 import com.ruthless.utils.ConfigUtils;
+import com.ruthless.utils.RaidUtils;
 import com.ruthless.web.RuthlessClient;
 import com.ruthless.web.request.RuthlessMemberLootItem;
 import com.ruthless.web.request.LootDropSubmission;
@@ -49,12 +50,14 @@ public class LootReceivedProcessor {
                             .map(item -> new RuthlessMemberLootItem(item.getId(), item.getQuantity(), itemManager.getItemComposition(item.getId()).getName()))
                             .collect(Collectors.toCollection(ArrayList::new))
             );
+            Collection<String> groupMembers = RaidUtils.getBossParty(client, lootReceived.getName());
+            metadata.put("players", groupMembers);
             LootDropSubmission request = LootDropSubmission.builder()
                     .sourceName(lootReceived.getName())
                     .world(client.getWorld())
                     .killCount(getKillcount(lootReceived.getName()))
                     .username(local.getName())
-                    .groupSize(1)
+                    .groupSize(groupMembers.size())
                     .metadata(metadata)
                     .build();
             ruthlessClient.submitLoot(request);

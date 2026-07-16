@@ -48,5 +48,5 @@ public interface RuthlessConfig extends Config
 			position = 7,
 			section = developmentSettings
 	)
-	default Integer clanId() { return Constants.RUTHLESS_CLAN_ID; }
+	default int clanId() { return Constants.RUTHLESS_CLAN_ID; }
 }
