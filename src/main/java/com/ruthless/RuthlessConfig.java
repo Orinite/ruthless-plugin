@@ -1,5 +1,6 @@
 package com.ruthless;
 
+import com.ruthless.utils.Constants;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
@@ -9,9 +10,8 @@ import net.runelite.client.config.ConfigSection;
 public interface RuthlessConfig extends Config
 {
 	public static final String MEMBER_API_KEY = "memberAPIKey";
-	public static final String SHOW_IOTD_INFO = "showIotdInfoInInfobox";
-	public static final String SHOW_SLAYER_INFO = "showSlayerInfoInInfobox";
-	public static final String SHOW_NEW_SLAYERTASK_CHAT_NOTIFICATION = "showNewSlayertaskChatNotification";
+
+	public static final String CLAN_ID = "clanId";
 
 	@ConfigSection(
 		name = "General",
@@ -34,44 +34,19 @@ public interface RuthlessConfig extends Config
 	}
 
 	@ConfigSection(
-			name = "Infobox",
-			description = "Infobox Settings for display",
-			position = 2
-	)
-	String infoboxSettings = "infoboxSettings";
-
-	@ConfigItem(
-			keyName = SHOW_IOTD_INFO,
-			name = "Show Item Of the Day Infobox",
-			description = "Show the Item of the day information in Ruthless Infobox",
-			position = 3,
-			section = infoboxSettings
-	)
-	default boolean showIotdInInfobox() { return true; }
-
-	@ConfigItem(
-			keyName = SHOW_SLAYER_INFO,
-			name = "Show Ruthless Slayertask Infobox",
-			description = "Show the Slayertask information in Ruthless Infobox",
-			position = 4,
-			section = infoboxSettings
-	)
-	default boolean showSlayertaskInInfobox() { return true; }
-
-	@ConfigSection(
-			name = "Chat Notifications",
-			description = "Chat notifications when clan things happen",
-			position = 5
-	)
-	String chatNotificationSettings = "chatNotificationSettings";
-
-	@ConfigItem(
-			keyName = SHOW_NEW_SLAYERTASK_CHAT_NOTIFICATION,
-			name = "Show New Slayertask Notifications",
-			description = "Shows new slayertask notification in chatbox when receiving a new slayertask",
+			name = "Development",
+			description = "Development options for plugin. DO NOT CHANGE VALUES.",
 			position = 6,
-			section = chatNotificationSettings
+			closedByDefault = true
 	)
-	default boolean showNewSlayertaskChatNotification() { return true; }
+	String developmentSettings = "developmentSettings";
 
+	@ConfigItem(
+			keyName = CLAN_ID,
+			name = "Clan ID",
+			description = "What clan ID to use for API",
+			position = 7,
+			section = developmentSettings
+	)
+	default Integer clanId() { return Constants.RUTHLESS_CLAN_ID; }
 }

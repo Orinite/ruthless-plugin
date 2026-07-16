@@ -1,7 +1,7 @@
 package com.ruthless.eventprocessor;
 
 import com.ruthless.web.RuthlessClient;
-import com.ruthless.web.request.RuthlessMemberBossTimeRequest;
+import com.ruthless.web.request.BossKillSubmission;
 import joptsimple.internal.Strings;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -76,19 +76,16 @@ public class ChatEventProcessor {
             log.debug("new time event emit. Boss: {}, kc: {}, time: {}, pb: {}", lastBoss, lastKc, lastTiming, lastPb);
             Player local = client.getLocalPlayer();
             if( local != null ){
-                ruthlessClient.submitBossTimeRequest(
-                        new RuthlessMemberBossTimeRequest(
-                                UUID.randomUUID().toString(),
-                                lastBoss,
-                                String.valueOf(lastTiming),
-                                String.valueOf(lastPb),
-                                lastKc,
-                                client.getWorld(),
-                                1,
-                                local.getName(),
-                                local.getName()
-                        )
-                );
+                BossKillSubmission submission = BossKillSubmission.builder()
+                        .sourceName(lastBoss)
+                        .killTimeSeconds(lastTiming)
+                        .username(local.getName())
+                        .killCount(lastKc)
+                        .personalBestTimeSeconds(lastPb)
+                        .world(client.getWorld())
+                        .groupSize(1)
+                        .build();
+                ruthlessClient.submitBossTimeRequest(submission);
             }
             setLastBoss(null);
             setLastKc(-1);

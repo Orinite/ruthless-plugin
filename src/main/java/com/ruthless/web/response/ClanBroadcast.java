@@ -8,8 +8,10 @@ import lombok.Getter;
 public class ClanBroadcast {
 
     private int id;
-    private String clanDiscordGuildId;
-    private long startsAt;
-    private long expiresAt;
+    private int clanId;
+    private String startsAt;
+    private String expiresAt;
     private String message;
+    private String createdAt;
+    private String updatedAt;
 }

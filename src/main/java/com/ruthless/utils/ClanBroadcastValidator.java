@@ -15,7 +15,7 @@ public class ClanBroadcastValidator implements Validator<ClanBroadcast> {
 
     public boolean valid(ClanBroadcast clanBroadcast) {
         Instant now = Instant.now();
-        Instant expiresAt = Instant.ofEpochSecond(clanBroadcast.getExpiresAt());
+        Instant expiresAt = Instant.parse(clanBroadcast.getExpiresAt());
 
         Duration difference = Duration.between(now, expiresAt);
 
