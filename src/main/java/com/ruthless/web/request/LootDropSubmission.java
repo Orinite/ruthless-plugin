@@ -2,19 +2,20 @@ package com.ruthless.web.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @AllArgsConstructor
 @Builder
-public class RuthlessMemberLootRequest {
+public class LootDropSubmission {
 
-    private List<RuthlessMemberLootItem> items;
     private String sourceName;
     private int world;
+    private String username;
+    private int killCount;
     private int groupSize;
-    private String players;
-    private String addedBy;
+    private String obtainedAt;
+    private Map<String, Object> metadata;
 
 }

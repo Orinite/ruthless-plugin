@@ -1,7 +1,8 @@
 package com.ruthless.eventprocessor;
 
+import com.ruthless.utils.RaidUtils;
 import com.ruthless.web.RuthlessClient;
-import com.ruthless.web.request.RuthlessMemberBossTimeRequest;
+import com.ruthless.web.request.BossKillSubmission;
 import joptsimple.internal.Strings;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -13,17 +14,22 @@ import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
 import java.time.Instant;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.util.Map.entry;
+
 @Slf4j
-public class ChatEventProcessor {
+public class BossKillChatEventProcessor {
 
     //These Patterns were grabbed from Runelite's ChatCommandsPlugin.java
     private static final Pattern KILLCOUNT_PATTERN = Pattern.compile("Your (?<pre>completion count for |subdued |completed )?(?:<col=[0-9a-f]{6}>)?(?<boss>.+?)(?:</col>)? (?<post>(?:(?:kill|harvest|lap|completion|success) )?(?:count )?)is: ?<col=[0-9a-f]{6}>(?<kc>[0-9,]+)</col>");
     private static final Pattern KILL_DURATION_PATTERN = Pattern.compile("(?i)(?:(?:Fight |Lap |Challenge |Corrupted challenge )?duration:|Subdued in|(?<!total )completion time:) <col=[0-9a-f]{6}>(?<time>[0-9:.]+)</col>\\. Personal best: (?:<col=ff0000>)?(?<pb>[0-9:]+(?:\\.[0-9]+)?)");
     private static final Pattern NEW_PB_PATTERN = Pattern.compile("(?i)(?:(?:Fight |Lap |Challenge |Corrupted challenge )?duration:|Subdued in|(?<!total )completion time:) <col=[0-9a-f]{6}>(?<pb>[0-9:]+(?:\\.[0-9]+)?)</col> \\(new personal best\\)");
+    private static final String TEAM_SIZES = "(?<teamsize>\\d+(?:\\+|-\\d+)? players?|Solo)";
+    private static final Pattern RAIDS_PB_PATTERN = Pattern.compile("<col=ef20ff>Congratulations - your raid is complete!</col><br>Team size: <col=ff0000>" + TEAM_SIZES + "</col> Duration:</col> <col=ff0000>(?<pb>[0-9:]+(?:\\.[0-9]+)?)</col> \\(new personal best\\)</col>");
+    private static final Pattern RAIDS_DURATION_PATTERN = Pattern.compile("<col=ef20ff>Congratulations - your raid is complete!</col><br>Team size: <col=ff0000>" + TEAM_SIZES + "</col> Duration:</col> <col=ff0000>(?<time>[0-9:.]+)</col> Personal best: </col><col=ff0000>(?<pb>[0-9:]+(?:\\.[0-9]+)?)</col>");
     private static final long FIVE_SECONDS_MILLIS = 5000L;
 
     @Setter
@@ -38,20 +44,27 @@ public class ChatEventProcessor {
     private boolean isNewPb = false;
     @Setter
     private double lastPb = -1;
+    @Setter
+    private boolean isRaid = false;
+    @Setter
+    private int raidSize = -1;
 
     private @Inject RuthlessClient ruthlessClient;
     private @Inject Client client;
 
     @Subscribe
     public void onChatMessage( ChatMessage chatMessage ) {
-        if (chatMessage.getType() != ChatMessageType.GAMEMESSAGE) {
+
+        if (chatMessage.getType() != ChatMessageType.GAMEMESSAGE && chatMessage.getType() != ChatMessageType.FRIENDSCHATNOTIFICATION) {
             return;
         }
 
         String message = chatMessage.getMessage();
+
         Matcher matcher = KILLCOUNT_PATTERN.matcher(message);
         if (matcher.find())
         {
+            log.debug("kc pattern found");
             final String boss = matcher.group("boss");
             final int kc = Integer.parseInt(matcher.group("kc").replace(",",""));
             setLastBoss(boss);
@@ -61,39 +74,60 @@ public class ChatEventProcessor {
 
         matcher = KILL_DURATION_PATTERN.matcher(message);
         if(matcher.find()) {
+            log.debug("kill duration pattern found");
             setNewPb(false);
             setLastTiming(timeStringToSeconds(matcher.group("time")));
             setLastPb(timeStringToSeconds(matcher.group("pb")));
         }
         matcher = NEW_PB_PATTERN.matcher(message);
         if(matcher.find()) {
+            log.debug("new pb pattern found");
             setNewPb(true);
             setLastTiming(timeStringToSeconds(matcher.group("pb")));
             setLastPb(timeStringToSeconds(matcher.group("pb")));
+        }
+        matcher = RAIDS_DURATION_PATTERN.matcher(message);
+        if(matcher.find()) {
+            log.debug("raids duration pattern found");
+            setNewPb(false);
+            setLastTiming(timeStringToSeconds(matcher.group("time")));
+            setLastPb(timeStringToSeconds(matcher.group("pb")));
+            setRaid(true);
+            setRaidSize(Integer.parseInt(matcher.group("teamsize")));
+        }
+        matcher = RAIDS_PB_PATTERN.matcher(message);
+        if(matcher.find()) {
+            log.debug("raids pb pattern found");
+            setNewPb(false);
+            setLastTiming(timeStringToSeconds(matcher.group("pb")));
+            setLastPb(timeStringToSeconds(matcher.group("pb")));
+            setRaid(true);
+            setRaidSize(Integer.parseInt(matcher.group("teamsize")));
         }
 
         if (!Strings.isNullOrEmpty(lastBoss) && lastKc > 0 && lastTiming > 0.0 && validateTiming()) {
             log.debug("new time event emit. Boss: {}, kc: {}, time: {}, pb: {}", lastBoss, lastKc, lastTiming, lastPb);
             Player local = client.getLocalPlayer();
             if( local != null ){
-                ruthlessClient.submitBossTimeRequest(
-                        new RuthlessMemberBossTimeRequest(
-                                UUID.randomUUID().toString(),
-                                lastBoss,
-                                String.valueOf(lastTiming),
-                                String.valueOf(lastPb),
-                                lastKc,
-                                client.getWorld(),
-                                1,
-                                local.getName(),
-                                local.getName()
-                        )
-                );
+                Collection<String> groupMembers = RaidUtils.getBossParty(client, lastBoss);
+                BossKillSubmission submission = BossKillSubmission.builder()
+                        .sourceName(lastBoss)
+                        .killTimeSeconds(lastTiming)
+                        .username(local.getName())
+                        .killCount(lastKc)
+                        .personalBestTimeSeconds(lastPb)
+                        .world(client.getWorld())
+                        .groupSize(isRaid ? raidSize : groupMembers.size())
+                        .metadata(Map.ofEntries(entry("players", groupMembers)))
+                        .build();
+                ruthlessClient.submitBossTimeRequest(submission);
             }
             setLastBoss(null);
             setLastKc(-1);
             setLastTiming(-1);
             setNewPb(false);
+            setRaid(false);
+            setRaidSize(-1);
         }
 
     }

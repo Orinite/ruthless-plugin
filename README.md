@@ -16,21 +16,7 @@ Generate your API key within Discord first, put it in the configuration of the p
 
 ![Invalid apikey](imgs/invalidkey.png)
 
-### Ruthless Infobox
-
-Gets the current Item of the Day information and your Ruthless Slayer task information to display within an infobox
-
-![ruthless infobox](imgs/infobox.png)
-
-you can hide item of the day or slayer task info from the infobox if you desire.
-
-### New Slayertask notification
-
-When a new slayer task is detected, allows a message to show up in the chatbox
-
-![slayertask_noti](/imgs/new_task_noti.png)
-
 
 ### Autosubmission
 
-Autosubmits your times and pbs when killing bosses to the ruthless API.
+Autosubmits your times and pbs when killing bosses to the ruthless API. Also if your dropped item matches a whitelist, it will auto submit to ruthless API.

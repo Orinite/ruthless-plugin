@@ -6,17 +6,13 @@ import com.ruthless.RuthlessConfig;
 import com.ruthless.RuthlessPlugin;
 import com.ruthless.event.ClanBroadcastEvent;
 import com.ruthless.event.ClanWhitelistReceivedEvent;
-import com.ruthless.event.ItemOfTheDayReceivedEvent;
-import com.ruthless.event.RuthlessSlayerTaskInfoReceivedEvent;
-import com.ruthless.utils.Constants;
 import com.ruthless.web.interceptor.RuthlessApiInterceptor;
-import com.ruthless.web.request.RuthlessMemberBossTimeRequest;
-import com.ruthless.web.request.RuthlessMemberLootRequest;
+import com.ruthless.web.request.BossKillSubmission;
+import com.ruthless.web.request.DonationSubmission;
+import com.ruthless.web.request.LootDropSubmission;
 import com.ruthless.web.response.ClanBroadcast;
 import com.ruthless.web.response.ClanWhitelist;
-import com.ruthless.web.response.ItemOfTheDay;
-import com.ruthless.web.response.RuthlessSlayerTaskInfo;
-import lombok.NonNull;import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.client.RuneLiteProperties;
 import net.runelite.client.callback.ClientThread;
@@ -91,9 +87,9 @@ public class RuthlessClient {
     {
         HttpUrl.Builder urlBuilder = new HttpUrl.Builder()
                 .scheme("https")
-                .host("ruthless-osrs.com")
+                .host("new.ruthless-osrs.com")
                 .addPathSegment("api")
-                .addPathSegment("v2");
+                .addPathSegment("v3");
 
         for (String pathSegment : pathSegments)
         {
@@ -113,54 +109,15 @@ public class RuthlessClient {
         return urlBuilder.build();
     }
 
-    public void getItemOfTheDay() {
-        Request request = createRequest("iotd", "current");
-
-        this.okHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                log.error("Error fetching Item of the Day", e);
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String body = response.body().string();
-                    ItemOfTheDay iotdResponse = gson.fromJson(body, ItemOfTheDay.class);
-                    postEvent(new ItemOfTheDayReceivedEvent(iotdResponse));
-                }
-                response.close();
-            }
-        });
-    }
-
-    public void getCurrentSlayerTask(@NonNull String username) {
-        Request request = createRequest("member", username, "current_task");
-
-        this.okHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                log.error("Error fetching Slayer task for member {}", username, e);
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String body = response.body().string();
-                    RuthlessSlayerTaskInfo slayerTaskResponse = gson.fromJson(body, RuthlessSlayerTaskInfo.class);
-                    postEvent(new RuthlessSlayerTaskInfoReceivedEvent(slayerTaskResponse));
-                }
-                response.close();
-            }
-        });
-    }
-
     private void postEvent(Object event) {
         clientThread.invokeLater(() -> eventBus.post(event));
     }
 
     public void getClanBroadcast() {
-        Request request = createRequest("clans", Constants.RUTHLESS_DISCORD_GUILD_ID, "broadcast");
+        //exit early, dont fetch.
+        if (!config.showClanBroadcasts()) return;
+
+        Request request = createRequest("clans", String.valueOf(config.clanId()), "broadcasts", "latest");
 
         this.okHttpClient.newCall(request).enqueue(new Callback() {
             @Override
@@ -186,7 +143,7 @@ public class RuthlessClient {
     }
 
     public void getClanWhitelist() {
-        Request request = createRequest("clans", Constants.RUTHLESS_DISCORD_GUILD_ID, "whitelists");
+        Request request = createRequest("clans", String.valueOf(config.clanId()), "whitelists");
 
         this.okHttpClient.newCall(request).enqueue(new Callback() {
 
@@ -198,6 +155,7 @@ public class RuthlessClient {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
+                    log.debug("Whitelist fetched successfully");
                     String body = response.body().string();
                     ClanWhitelist clanWhitelist = gson.fromJson(body, ClanWhitelist.class);
                     postEvent(new ClanWhitelistReceivedEvent(clanWhitelist));
@@ -207,8 +165,8 @@ public class RuthlessClient {
         });
     }
 
-    public void submitBossTimeRequest(RuthlessMemberBossTimeRequest ruthlessMemberBossTimeRequest) {
-        Request request = createPostRequest(ruthlessMemberBossTimeRequest, "clans", "submit_time");
+    public void submitBossTimeRequest(BossKillSubmission ruthlessMemberBossTimeRequest) {
+        Request request = createPostRequest(ruthlessMemberBossTimeRequest, "api-kill-submissions");
 
         this.okHttpClient.newCall(request).enqueue(new Callback() {
             @Override
@@ -231,9 +189,9 @@ public class RuthlessClient {
 
 
 
-    public void submitLoot(RuthlessMemberLootRequest ruthlessMemberLootRequest) {
+    public void submitLoot(LootDropSubmission ruthlessMemberLootRequest) {
 
-        Request request = createPostRequest(ruthlessMemberLootRequest, "clans", "submit_item");
+        Request request = createPostRequest(ruthlessMemberLootRequest, "api-drop-submissions");
 
         this.okHttpClient.newCall(request).enqueue(new Callback() {
             @Override
@@ -244,10 +202,32 @@ public class RuthlessClient {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 log.debug("Sent item request");
-                if (response.code() == 201) {
+                if (response.isSuccessful()) {
                     log.debug("Clan item recorded successfully.");
                 } else {
                     log.debug("Error recording item. Response: {}. error: {}", response.code(), response.body().string());
+                }
+                response.close();
+            }
+        });
+    }
+
+    public void submitDonation(DonationSubmission donationSubmission) {
+        Request request = createPostRequest(donationSubmission, "clans", String.valueOf(config.clanId()), "donations");
+
+        this.okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("Error submitting item request", e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                log.debug("Sent item request");
+                if (response.isSuccessful()) {
+                    log.debug("Clan Donation recorded successfully.");
+                } else {
+                    log.debug("Error recording Donation. Response: {}. error: {}", response.code(), response.body().string());
                 }
                 response.close();
             }
