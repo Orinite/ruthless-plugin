@@ -114,6 +114,9 @@ public class RuthlessClient {
     }
 
     public void getClanBroadcast() {
+        //exit early, dont fetch.
+        if (!config.showClanBroadcasts()) return;
+
         Request request = createRequest("clans", String.valueOf(config.clanId()), "broadcasts", "latest");
 
         this.okHttpClient.newCall(request).enqueue(new Callback() {

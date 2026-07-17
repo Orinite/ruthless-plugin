@@ -123,6 +123,8 @@ public class RuthlessPlugin extends Plugin
 
 	@Subscribe
 	public void onClanBroadcastEvent(ClanBroadcastEvent event ) {
+		//if not enabled, dont show.
+		if (!config.showClanBroadcasts()) { return; }
 
 		ClanBroadcast broadcast = event.getClanBroadcast();
 		if (clanBroadcastValidator.valid(broadcast)) {

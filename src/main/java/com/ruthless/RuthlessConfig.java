@@ -10,6 +10,7 @@ import net.runelite.client.config.ConfigSection;
 public interface RuthlessConfig extends Config
 {
 	public static final String MEMBER_API_KEY = "memberAPIKey";
+	public static final String SHOW_CLAN_BROADCASTS = "showClanBroadcasts";
 
 	public static final String CLAN_ID = "clanId";
 
@@ -25,7 +26,6 @@ public interface RuthlessConfig extends Config
 		name = "Member API Key",
 		description = "Provides verification. Use /api request-key in #commands in Ruthless discord.",
 		secret = true,
-		position = 1,
 		section = generalSettings
 	)
 	default String memberAPIKey()
@@ -33,10 +33,18 @@ public interface RuthlessConfig extends Config
 		return "";
 	}
 
+	@ConfigItem(
+			keyName = SHOW_CLAN_BROADCASTS,
+			name = "Show Clan Broadcasts",
+			description = "If enabled, will show the clan broadcast as a message once per session.",
+			section = generalSettings
+	)
+	default boolean showClanBroadcasts() { return true; }
+
 	@ConfigSection(
-			name = "Development",
+			name = "Development (DONT CHANGE)",
 			description = "Development options for plugin. DO NOT CHANGE VALUES.",
-			position = 6,
+			position = 1,
 			closedByDefault = true
 	)
 	String developmentSettings = "developmentSettings";
@@ -45,7 +53,6 @@ public interface RuthlessConfig extends Config
 			keyName = CLAN_ID,
 			name = "Clan ID",
 			description = "What clan ID to use for API",
-			position = 7,
 			section = developmentSettings
 	)
 	default int clanId() { return Constants.RUTHLESS_CLAN_ID; }
