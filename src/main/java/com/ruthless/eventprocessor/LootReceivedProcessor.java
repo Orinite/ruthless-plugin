@@ -69,7 +69,7 @@ public class LootReceivedProcessor {
         if (!ConfigUtils.isPluginDisabled(configManager, RL_CHAT_CMD_PLUGIN_NAME)) {
             Integer kc = configManager.getRSProfileConfiguration("killcount", cleanBossName(sourceName), int.class);
             if (kc != null) {
-                return kc - 1; // decremented since chat event typically occurs before loot event
+                return kc;
             }
         }
         return 0;

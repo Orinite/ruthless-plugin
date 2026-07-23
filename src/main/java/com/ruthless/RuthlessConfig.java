@@ -14,6 +14,7 @@ public interface RuthlessConfig extends Config
 
 	public static final String CLAN_ID = "clanId";
 	public static final String BASE_API_HOSTNAME = "baseApiHostname";
+	public static final String BASE_API_PORT = "baseApiPort";
 	public static final String USE_HTTPS = "useHttps";
 
 	@ConfigSection(
@@ -74,4 +75,12 @@ public interface RuthlessConfig extends Config
 			section = developmentSettings
 	)
 	default String baseApiHostname() { return Constants.RUTHLESS_BASE_HOSTNAME; }
+
+	@ConfigItem(
+			keyName = BASE_API_PORT,
+			name = "Base API PORT",
+			description = "What port to use for API requests",
+			section = developmentSettings
+	)
+	default int baseApiPort() { return Constants.RUTHLESS_DEFAULT_PORT; }
 }

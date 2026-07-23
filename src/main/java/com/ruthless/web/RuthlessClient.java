@@ -88,6 +88,7 @@ public class RuthlessClient {
         HttpUrl.Builder urlBuilder = new HttpUrl.Builder()
                 .scheme(config.useHttps() ? "https" : "http")
                 .host(config.baseApiHostname())
+                .port(config.baseApiPort())
                 .addPathSegment("api")
                 .addPathSegment("v3");
 
