@@ -86,8 +86,8 @@ public class RuthlessClient {
     private HttpUrl buildUrl(String[] pathSegments)
     {
         HttpUrl.Builder urlBuilder = new HttpUrl.Builder()
-                .scheme("https")
-                .host("new.ruthless-osrs.com")
+                .scheme(config.useHttps() ? "https" : "http")
+                .host(config.baseApiHostname())
                 .addPathSegment("api")
                 .addPathSegment("v3");
 

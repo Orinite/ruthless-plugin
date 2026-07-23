@@ -13,6 +13,8 @@ public interface RuthlessConfig extends Config
 	public static final String SHOW_CLAN_BROADCASTS = "showClanBroadcasts";
 
 	public static final String CLAN_ID = "clanId";
+	public static final String BASE_API_HOSTNAME = "baseApiHostname";
+	public static final String USE_HTTPS = "useHttps";
 
 	@ConfigSection(
 		name = "General",
@@ -56,4 +58,20 @@ public interface RuthlessConfig extends Config
 			section = developmentSettings
 	)
 	default int clanId() { return Constants.RUTHLESS_CLAN_ID; }
+
+	@ConfigItem(
+			keyName = USE_HTTPS,
+			name = "Use HTTPS",
+			description = "Use HTTPS for the API calls. turn off for localhost",
+			section = developmentSettings
+	)
+	default boolean useHttps() { return true; }
+
+	@ConfigItem(
+			keyName = BASE_API_HOSTNAME,
+			name = "Base API URL",
+			description = "What base URL to use for API requests",
+			section = developmentSettings
+	)
+	default String baseApiHostname() { return Constants.RUTHLESS_BASE_HOSTNAME; }
 }
