@@ -1,5 +1,6 @@
 package com.ruthless;
 
+import com.ruthless.api.ClanBroadcastType;
 import com.ruthless.utils.Constants;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
@@ -11,6 +12,8 @@ public interface RuthlessConfig extends Config
 {
 	public static final String MEMBER_API_KEY = "memberAPIKey";
 	public static final String SHOW_CLAN_BROADCASTS = "showClanBroadcasts";
+	public static final String BROADCAST_TYPE = "clanBroadcastType";
+	public static final String BROADCAST_LIMIT = "clanBroadcastLimit";
 
 	public static final String CLAN_ID = "clanId";
 	public static final String BASE_API_HOSTNAME = "baseApiHostname";
@@ -29,7 +32,8 @@ public interface RuthlessConfig extends Config
 		name = "Member API Key",
 		description = "Provides verification. Use /api request-key in #commands in Ruthless discord.",
 		secret = true,
-		section = generalSettings
+		section = generalSettings,
+			position = 0
 	)
 	default String memberAPIKey()
 	{
@@ -40,9 +44,30 @@ public interface RuthlessConfig extends Config
 			keyName = SHOW_CLAN_BROADCASTS,
 			name = "Show Clan Broadcasts",
 			description = "If enabled, will show the clan broadcast as a message once per session.",
-			section = generalSettings
+			section = generalSettings,
+			position = 1
 	)
 	default boolean showClanBroadcasts() { return true; }
+
+	@ConfigItem(
+			keyName = BROADCAST_TYPE,
+			name = "Broadcast Type",
+			description = "What type of broadcast you'd like. Defaults to in-game broadcast.",
+			section = generalSettings,
+			position = 2
+	)
+	default ClanBroadcastType clanBroadcastType() {
+		return ClanBroadcastType.BROADCAST;
+	}
+
+	@ConfigItem(
+			keyName = BROADCAST_LIMIT,
+			name = "Broadcast limit",
+			description = "Number of times to display a broadcast before not displaying again. 0 = unlimited times",
+			section = generalSettings,
+			position = 3
+	)
+	default int broadcastLimit() { return Constants.BROADCAST_LIMIT_DEFAULT;}
 
 	@ConfigSection(
 			name = "Development (DONT CHANGE)",

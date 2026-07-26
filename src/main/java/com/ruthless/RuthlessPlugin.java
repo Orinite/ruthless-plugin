@@ -3,6 +3,7 @@ package com.ruthless;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 
+import com.ruthless.api.ClanBroadcastType;
 import com.ruthless.event.ClanBroadcastEvent;
 import com.ruthless.event.MemberAPIKeyInvalidEvent;
 import com.ruthless.eventprocessor.BossKillChatEventProcessor;
@@ -33,6 +34,7 @@ import net.runelite.client.task.Schedule;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 
+import java.awt.*;
 import java.time.temporal.ChronoUnit;
 
 @Slf4j
@@ -130,12 +132,26 @@ public class RuthlessPlugin extends Plugin
 		if (clanBroadcastValidator.valid(broadcast)) {
 			sentClanBroadcast = true;
 			ChatMessageBuilder cmd = new ChatMessageBuilder();
-			cmd.append("[Ruthless] ").append(broadcast.getMessage());
+			cmd.append(Color.DARK_GRAY, "[Ruthless] ").append(Color.GREEN, broadcast.getMessage());
 			chatMessageManager.queue(QueuedMessage.builder()
-					.type(ChatMessageType.BROADCAST)
+					.type(determineChatType())
 					.runeLiteFormattedMessage(cmd.build()).build()
 			);
 		}
+	}
+
+	private ChatMessageType determineChatType() {
+		switch (config.clanBroadcastType())
+		{
+			case BROADCAST:
+				return ChatMessageType.BROADCAST;
+			case GAME_MESSAGE:
+				return ChatMessageType.GAMEMESSAGE;
+		}
+		return ChatMessageType.BROADCAST;
+
+
+
 	}
 
 	@Subscribe
@@ -153,6 +169,7 @@ public class RuthlessPlugin extends Plugin
 		if ( local == null ) {
 			return false;
 		}
+		log.debug(" Getting clan broadcasts");
 		ruthlessClient.getClanBroadcast();
 		return true;
 	}

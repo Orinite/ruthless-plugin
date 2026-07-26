@@ -14,4 +14,5 @@ public class ClanBroadcast {
     private String message;
     private String createdAt;
     private String updatedAt;
+    private ClanBroadcastAcknowledgements acknowledgements;
 }

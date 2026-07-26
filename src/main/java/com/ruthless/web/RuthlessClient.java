@@ -6,14 +6,17 @@ import com.ruthless.RuthlessConfig;
 import com.ruthless.RuthlessPlugin;
 import com.ruthless.event.ClanBroadcastEvent;
 import com.ruthless.event.ClanWhitelistReceivedEvent;
+import com.ruthless.utils.Constants;
 import com.ruthless.web.interceptor.RuthlessApiInterceptor;
 import com.ruthless.web.request.BossKillSubmission;
+import com.ruthless.web.request.ClanAcknowledgement;
 import com.ruthless.web.request.DonationSubmission;
 import com.ruthless.web.request.LootDropSubmission;
 import com.ruthless.web.response.ClanBroadcast;
 import com.ruthless.web.response.ClanWhitelist;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.Player;
 import net.runelite.client.RuneLiteProperties;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
@@ -136,6 +139,21 @@ public class RuthlessClient {
                 if (response.isSuccessful()) {
                     String body = response.body().string();
                     ClanBroadcast clanBroadcast = gson.fromJson(body, ClanBroadcast.class);
+                    if (config.broadcastLimit() != Constants.BROADCAST_LIMIT_DEFAULT) {
+                        long broadcastCounts = clanBroadcast.getAcknowledgements().getItems().stream().filter(ack -> ack.getClanBroadcastId() == clanBroadcast.getId()).count();
+                        if (broadcastCounts >= config.broadcastLimit()) {
+                            //dont send event.
+                            return;
+                        }
+                    }
+                    clientThread.invokeLater(() -> {
+                        Player player = client.getLocalPlayer();
+                        if (player == null) {
+                            return false;
+                        }
+                        submitBroadcastAcknowledgement(ClanAcknowledgement.builder().username(client.getLocalPlayer().getName()).build(), clanBroadcast.getId());
+                        return true;
+                    });
                     postEvent(new ClanBroadcastEvent(clanBroadcast));
                 }
                 response.close();
@@ -229,6 +247,28 @@ public class RuthlessClient {
                     log.debug("Clan Donation recorded successfully.");
                 } else {
                     log.debug("Error recording Donation. Response: {}. error: {}", response.code(), response.body().string());
+                }
+                response.close();
+            }
+        });
+    }
+
+    public void submitBroadcastAcknowledgement(ClanAcknowledgement clanAcknowledgement, int broadcastId) {
+        Request request = createPostRequest(clanAcknowledgement, "clans", String.valueOf(config.clanId()), "broadcasts", String.valueOf(broadcastId), "acknowledgements");
+
+        this.okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("Error submitting item request", e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                log.debug("Sent acknowledgement request");
+                if (response.isSuccessful()) {
+                    log.debug("Clan Broadcast Acknowledgement recorded successfully.");
+                } else {
+                    log.debug("Error recording Clan Broadcast Acknowledgement. Response: {}. error: {}", response.code(), response.body().string());
                 }
                 response.close();
             }
