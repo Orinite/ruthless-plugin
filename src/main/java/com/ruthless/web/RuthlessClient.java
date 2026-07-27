@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.ruthless.RuthlessConfig;
 import com.ruthless.RuthlessPlugin;
 import com.ruthless.event.ClanBroadcastEvent;
+import com.ruthless.event.ClanWebhooksReceivedEvent;
 import com.ruthless.event.ClanWhitelistReceivedEvent;
 import com.ruthless.utils.Constants;
 import com.ruthless.web.interceptor.RuthlessApiInterceptor;
@@ -14,6 +15,7 @@ import com.ruthless.web.request.DonationSubmission;
 import com.ruthless.web.request.LootDropSubmission;
 import com.ruthless.web.response.ClanBroadcast;
 import com.ruthless.web.response.ClanWhitelist;
+import com.ruthless.web.response.webhooks.ClanWebhooks;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
@@ -184,6 +186,30 @@ public class RuthlessClient {
         });
     }
 
+
+    public void getWebhooks() {
+        Request request = createRequest("clans", String.valueOf(config.clanId()), "webhooks");
+
+        this.okHttpClient.newCall(request).enqueue(new Callback() {
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("Error fetching webhooks for clan", e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    log.debug("Webhooks fetched successfully");
+                    String body = response.body().string();
+                    ClanWebhooks clanWebhooks = gson.fromJson(body, ClanWebhooks.class);
+                    postEvent(new ClanWebhooksReceivedEvent(clanWebhooks));
+                }
+                response.close();
+            }
+        });
+    }
+
     public void submitBossTimeRequest(BossKillSubmission ruthlessMemberBossTimeRequest) {
         Request request = createPostRequest(ruthlessMemberBossTimeRequest, "api-kill-submissions");
 
@@ -274,4 +300,5 @@ public class RuthlessClient {
             }
         });
     }
+
 }
