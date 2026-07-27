@@ -72,7 +72,7 @@ public class PlayerDeathProcessor {
             return;
         }
         Player local = client.getLocalPlayer();
-        DiscordWebhookBody discordWebhookBody = DiscordWebhookBody.builder().content(config.deathMessage().replaceAll("\\$name", local.getName())).build();
+        DiscordWebhookBody discordWebhookBody = DiscordWebhookBody.builder().content(local.getName() + ": " + config.deathMessage().replaceAll("\\$name", local.getName())).build();
         MultipartBody requestBodyBuilder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("payload_json", GSON.toJson(discordWebhookBody))
