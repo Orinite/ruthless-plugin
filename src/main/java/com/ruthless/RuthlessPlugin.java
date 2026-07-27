@@ -9,6 +9,7 @@ import com.ruthless.event.MemberAPIKeyInvalidEvent;
 import com.ruthless.eventprocessor.BossKillChatEventProcessor;
 import com.ruthless.eventprocessor.DonationChatEventProcessor;
 import com.ruthless.eventprocessor.LootReceivedProcessor;
+import com.ruthless.eventprocessor.PlayerDeathProcessor;
 import com.ruthless.ui.infobox.RuthlessInfoboxManager;
 import com.ruthless.ui.overlay.MemberAPIKeyInvalidOverlay;
 import com.ruthless.utils.ClanBroadcastValidator;
@@ -20,6 +21,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
@@ -61,6 +63,7 @@ public class RuthlessPlugin extends Plugin
 	private @Inject BossKillChatEventProcessor bossKillChatEventProcessor;
 	private @Inject DonationChatEventProcessor donationChatEventProcessor;
 	private @Inject LootReceivedProcessor lootReceivedProcessor;
+	private @Inject PlayerDeathProcessor playerDeathProcessor;
 	private @Inject RuthlessInfoboxManager ruthlessInfoboxManager;
 
 	private boolean sentClanBroadcast;
@@ -75,8 +78,11 @@ public class RuthlessPlugin extends Plugin
 		eventBus.register(bossKillChatEventProcessor);
 		eventBus.register(lootReceivedProcessor);
 		eventBus.register(donationChatEventProcessor);
+		eventBus.register(playerDeathProcessor);
 
 		ruthlessClient.getClanWhitelist();
+		ruthlessClient.getWebhooks();
+
 		sentClanBroadcast = false;
 		memberAPIKeyValid = !config.memberAPIKey().isEmpty();
 	}
@@ -88,6 +94,7 @@ public class RuthlessPlugin extends Plugin
 		eventBus.unregister(bossKillChatEventProcessor);
 		eventBus.unregister(lootReceivedProcessor);
 		eventBus.unregister(donationChatEventProcessor);
+		eventBus.unregister(playerDeathProcessor);
 	}
 
 	@Provides
@@ -132,7 +139,7 @@ public class RuthlessPlugin extends Plugin
 		if (clanBroadcastValidator.valid(broadcast)) {
 			sentClanBroadcast = true;
 			ChatMessageBuilder cmd = new ChatMessageBuilder();
-			cmd.append(Color.DARK_GRAY, "[Ruthless] ").append(Color.GREEN, broadcast.getMessage());
+			cmd.append("[Ruthless] ").append(broadcast.getMessage());
 			chatMessageManager.queue(QueuedMessage.builder()
 					.type(determineChatType())
 					.runeLiteFormattedMessage(cmd.build()).build()
@@ -146,7 +153,7 @@ public class RuthlessPlugin extends Plugin
 			case BROADCAST:
 				return ChatMessageType.BROADCAST;
 			case GAME_MESSAGE:
-				return ChatMessageType.GAMEMESSAGE;
+				return ChatMessageType.CLAN_MESSAGE;
 		}
 		return ChatMessageType.BROADCAST;
 
@@ -202,5 +209,6 @@ public class RuthlessPlugin extends Plugin
 			return;
 		}
 		ruthlessClient.getClanWhitelist();
+		ruthlessClient.getWebhooks();
 	}
 }

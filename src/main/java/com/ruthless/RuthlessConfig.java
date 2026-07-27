@@ -14,6 +14,10 @@ public interface RuthlessConfig extends Config
 	public static final String SHOW_CLAN_BROADCASTS = "showClanBroadcasts";
 	public static final String BROADCAST_TYPE = "clanBroadcastType";
 	public static final String BROADCAST_LIMIT = "clanBroadcastLimit";
+	public static final String SEND_DEATHS = "sendDeaths";
+	public static final String SEND_DEATH_MESSAGE = "sendDeathsMessage";
+	public static final String CUSTOM_DEATH_WEBHOOK = "customDeathWebhooks";
+	public static final String CUSTOM_LOOT_WEBHOOK = "customLootWebhooks";
 
 	public static final String CLAN_ID = "clanId";
 	public static final String BASE_API_HOSTNAME = "baseApiHostname";
@@ -69,6 +73,42 @@ public interface RuthlessConfig extends Config
 	)
 	default int broadcastLimit() { return Constants.BROADCAST_LIMIT_DEFAULT;}
 
+	@ConfigItem(
+			keyName=SEND_DEATHS,
+			name = "Send death screenshots",
+			description = "Send Death screenshots to discord upon death.",
+			section = generalSettings,
+			position = 4
+	)
+	default boolean sendDeaths() { return false; }
+
+	@ConfigItem(
+			keyName=SEND_DEATH_MESSAGE,
+			name = "Death message",
+			description = "Message that is sent alongside screenshot",
+			section = generalSettings,
+			position = 5
+	)
+	default String deathMessage() { return "$name has died!"; }
+
+	@ConfigItem(
+			keyName = CUSTOM_DEATH_WEBHOOK,
+			name = "Custom Discord Death Webhook",
+			description = "Custom webhook url, separated by commas for multiple, that you want to send death alerts to",
+			section = generalSettings,
+			position = 6
+	)
+	default String customDeathWebhooks() { return ""; }
+
+	@ConfigItem(
+			keyName = CUSTOM_LOOT_WEBHOOK,
+			name = "Custom Discord Loot Webhook",
+			description = "Custom webhook url, separated by commas for multiple, that you want to send loot alerts to",
+			section = generalSettings,
+			position = 7
+	)
+	default String customLootWebhooks() { return ""; }
+
 	@ConfigSection(
 			name = "Development (DONT CHANGE)",
 			description = "Development options for plugin. DO NOT CHANGE VALUES.",
@@ -108,4 +148,6 @@ public interface RuthlessConfig extends Config
 			section = developmentSettings
 	)
 	default int baseApiPort() { return Constants.RUTHLESS_DEFAULT_PORT; }
+
+
 }
