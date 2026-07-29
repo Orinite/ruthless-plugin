@@ -41,6 +41,8 @@ public class BossKillChatEventProcessor {
     @Setter
     private Instant lastUpdateKc;
     @Setter
+    private Instant lastUpdateTiming;
+    @Setter
     private boolean isNewPb = false;
     @Setter
     private double lastPb = -1;
@@ -78,6 +80,7 @@ public class BossKillChatEventProcessor {
             setNewPb(false);
             setLastTiming(timeStringToSeconds(matcher.group("time")));
             setLastPb(timeStringToSeconds(matcher.group("pb")));
+            setLastUpdateTiming(Instant.now());
         }
         matcher = NEW_PB_PATTERN.matcher(message);
         if(matcher.find()) {
@@ -85,6 +88,7 @@ public class BossKillChatEventProcessor {
             setNewPb(true);
             setLastTiming(timeStringToSeconds(matcher.group("pb")));
             setLastPb(timeStringToSeconds(matcher.group("pb")));
+            setLastUpdateTiming(Instant.now());
         }
         matcher = RAIDS_DURATION_PATTERN.matcher(message);
         if(matcher.find()) {
@@ -94,6 +98,7 @@ public class BossKillChatEventProcessor {
             setLastPb(timeStringToSeconds(matcher.group("pb")));
             setRaid(true);
             setRaidSize(Integer.parseInt(matcher.group("teamsize")));
+            setLastUpdateTiming(Instant.now());
         }
         matcher = RAIDS_PB_PATTERN.matcher(message);
         if(matcher.find()) {
@@ -103,6 +108,7 @@ public class BossKillChatEventProcessor {
             setLastPb(timeStringToSeconds(matcher.group("pb")));
             setRaid(true);
             setRaidSize(Integer.parseInt(matcher.group("teamsize")));
+            setLastUpdateTiming(Instant.now());
         }
 
         if (!Strings.isNullOrEmpty(lastBoss) && lastKc > 0 && lastTiming > 0.0 && validateTiming()) {
@@ -132,8 +138,16 @@ public class BossKillChatEventProcessor {
 
     }
 
-    public boolean validateTiming() {
-        return Instant.now().toEpochMilli() - lastUpdateKc.toEpochMilli() < FIVE_SECONDS_MILLIS;
+    /** Validate that the submission is recent by verifying that they were all set within the last 5 seconds
+     *
+     * @return true if valid, false otherwise
+     */
+    private boolean validateTiming() {
+        if (lastUpdateKc == null || lastUpdateTiming == null)
+            return false;
+        Instant now = Instant.now();
+        return now.toEpochMilli() - lastUpdateKc.toEpochMilli() < FIVE_SECONDS_MILLIS
+                && now.toEpochMilli() - lastUpdateTiming.toEpochMilli() < FIVE_SECONDS_MILLIS;
     }
 
     static double timeStringToSeconds(String timeString)
