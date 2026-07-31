@@ -5,19 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.annotations.VarCStr;
-import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.widgets.Widget;
 
-import javax.annotation.Nullable;
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static net.runelite.client.util.Text.removeTags;
-import static net.runelite.client.util.Text.sanitize;
+
 
 @UtilityClass
 @Slf4j
