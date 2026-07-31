@@ -208,5 +208,6 @@ public class RuthlessPlugin extends Plugin
 			return;
 		}
 		ruthlessClient.getClanWhitelist();
+		ruthlessClient.getLatestEvent();
 	}
 }

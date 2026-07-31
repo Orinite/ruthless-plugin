@@ -9,8 +9,6 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 
-import javax.xml.crypto.dsig.keyinfo.KeyName;
-
 @ConfigGroup(RuthlessPlugin.CONFIG_GROUP)
 public interface RuthlessConfig extends Config
 {
@@ -18,6 +16,9 @@ public interface RuthlessConfig extends Config
 	public static final String SHOW_CLAN_BROADCASTS = "showClanBroadcasts";
 	public static final String BROADCAST_TYPE = "clanBroadcastType";
 	public static final String BROADCAST_LIMIT = "clanBroadcastLimit";
+
+	public static final String VANITY_ICONS = "vanityRankIconSetting";
+	public static final String VANITY_COLORS = "vanityRankColorSetting";
 
 	public static final String CLAN_ID = "clanId";
 	public static final String BASE_API_HOSTNAME = "baseApiHostname";
@@ -82,7 +83,7 @@ public interface RuthlessConfig extends Config
 	String vanityRankSettings = "vanityRankSettings";
 
 	@ConfigItem(
-			keyName = "vanityRankIconSetting",
+			keyName = VANITY_ICONS,
 			name = "Vanity Icons",
 			description = "If enabled, shows vanity ranks next to chat and in the chat panel",
 			section = vanityRankSettings,
@@ -91,7 +92,7 @@ public interface RuthlessConfig extends Config
 	default VanityRankIconSetting vanityRankSetting() { return VanityRankIconSetting.AFTER_USERNAME; }
 
 	@ConfigItem(
-			keyName = "vanityRankColorSetting",
+			keyName = VANITY_COLORS,
 			name = "Vanity Colors",
 			description = "Colors username",
 			section = vanityRankSettings,
