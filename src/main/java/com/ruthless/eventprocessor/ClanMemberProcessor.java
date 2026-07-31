@@ -54,7 +54,7 @@ public class ClanMemberProcessor {
         usernameToVanityRank.clear();
         for( ClanEventTeam team : event.getClanEvent().getTeams() ) {
             for (ClanEventTeamMember player : team.getPlayers() ) {
-                usernameToVanityRank.put(player.getPrimaryUsername(), team.getVanityRank());
+                usernameToVanityRank.put(player.getPrimaryUsername().toLowerCase(), team.getVanityRank());
             }
         }
     }
@@ -63,7 +63,7 @@ public class ClanMemberProcessor {
         final MessageNode messageNode = chatMessage.getMessageNode();
 
         String username = Text.sanitize(messageNode.getName());
-        VanityRank rank = usernameToVanityRank.get(username);
+        VanityRank rank = usernameToVanityRank.get(username.toLowerCase());
         if (rank == null) {
             return;
         }
@@ -106,10 +106,13 @@ public class ClanMemberProcessor {
         if(children == null || children.length == 0) {
             return;
         }
-        for( int i = 0; i < children.length; i+=3) {
+        for( int i = 0; i < children.length; i++) {
             Widget member = children[i];
-            if (usernameToVanityRank.containsKey(member.getText())) {
-                VanityRank rank = usernameToVanityRank.get(member.getText());
+            if(member.getText().isEmpty()) {
+                continue;
+            }
+            if (usernameToVanityRank.containsKey(member.getText().toLowerCase())) {
+                VanityRank rank = usernameToVanityRank.get(member.getText().toLowerCase());
 
                 String text = member.getText();
                 String icon = "<img="+(Integer.valueOf(rank.getLookupValue())-CLAN_ICON_IMG_OFFSET)+">";
