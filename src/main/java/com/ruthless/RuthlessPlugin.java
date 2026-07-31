@@ -7,6 +7,7 @@ import com.ruthless.api.ClanBroadcastType;
 import com.ruthless.event.ClanBroadcastEvent;
 import com.ruthless.event.MemberAPIKeyInvalidEvent;
 import com.ruthless.eventprocessor.BossKillChatEventProcessor;
+import com.ruthless.eventprocessor.ClanMemberProcessor;
 import com.ruthless.eventprocessor.DonationChatEventProcessor;
 import com.ruthless.eventprocessor.LootReceivedProcessor;
 import com.ruthless.ui.infobox.RuthlessInfoboxManager;
@@ -19,6 +20,7 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
+import net.runelite.api.clan.ClanMember;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageBuilder;
@@ -62,6 +64,7 @@ public class RuthlessPlugin extends Plugin
 	private @Inject DonationChatEventProcessor donationChatEventProcessor;
 	private @Inject LootReceivedProcessor lootReceivedProcessor;
 	private @Inject RuthlessInfoboxManager ruthlessInfoboxManager;
+	private @Inject ClanMemberProcessor clanMemberProcessor;
 
 	private boolean sentClanBroadcast;
 	private boolean memberAPIKeyValid;
@@ -75,8 +78,10 @@ public class RuthlessPlugin extends Plugin
 		eventBus.register(bossKillChatEventProcessor);
 		eventBus.register(lootReceivedProcessor);
 		eventBus.register(donationChatEventProcessor);
+		eventBus.register(clanMemberProcessor);
 
 		ruthlessClient.getClanWhitelist();
+		ruthlessClient.getLatestEvent();
 		sentClanBroadcast = false;
 		memberAPIKeyValid = !config.memberAPIKey().isEmpty();
 	}
@@ -88,6 +93,7 @@ public class RuthlessPlugin extends Plugin
 		eventBus.unregister(bossKillChatEventProcessor);
 		eventBus.unregister(lootReceivedProcessor);
 		eventBus.unregister(donationChatEventProcessor);
+		eventBus.unregister(clanMemberProcessor);
 	}
 
 	@Provides
@@ -202,5 +208,6 @@ public class RuthlessPlugin extends Plugin
 			return;
 		}
 		ruthlessClient.getClanWhitelist();
+		ruthlessClient.getLatestEvent();
 	}
 }

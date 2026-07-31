@@ -6,6 +6,7 @@ import com.ruthless.RuthlessConfig;
 import com.ruthless.RuthlessPlugin;
 import com.ruthless.event.ClanBroadcastEvent;
 import com.ruthless.event.ClanWhitelistReceivedEvent;
+import com.ruthless.event.LatestClanEventReceived;
 import com.ruthless.utils.Constants;
 import com.ruthless.web.interceptor.RuthlessApiInterceptor;
 import com.ruthless.web.request.BossKillSubmission;
@@ -14,6 +15,7 @@ import com.ruthless.web.request.DonationSubmission;
 import com.ruthless.web.request.LootDropSubmission;
 import com.ruthless.web.response.ClanBroadcast;
 import com.ruthless.web.response.ClanWhitelist;
+import com.ruthless.web.response.events.EventsResponse;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
@@ -134,15 +136,17 @@ public class RuthlessClient {
                 if (response.code() == 404) {
                     //not found, its fine we wont queue a message.
                     log.debug("No broadcast message found");
+                    response.close();
                     return;
                 }
-                if (response.isSuccessful()) {
+                else if (response.isSuccessful()) {
                     String body = response.body().string();
                     ClanBroadcast clanBroadcast = gson.fromJson(body, ClanBroadcast.class);
                     if (config.broadcastLimit() != Constants.BROADCAST_LIMIT_DEFAULT) {
                         long broadcastCounts = clanBroadcast.getAcknowledgements().getItems().stream().filter(ack -> ack.getClanBroadcastId() == clanBroadcast.getId()).count();
                         if (broadcastCounts >= config.broadcastLimit()) {
                             //dont send event.
+                            response.close();
                             return;
                         }
                     }
@@ -178,6 +182,31 @@ public class RuthlessClient {
                     String body = response.body().string();
                     ClanWhitelist clanWhitelist = gson.fromJson(body, ClanWhitelist.class);
                     postEvent(new ClanWhitelistReceivedEvent(clanWhitelist));
+                }
+                response.close();
+            }
+        });
+    }
+
+    public void getLatestEvent() {
+        Request request = createRequest("clans",String.valueOf(config.clanId()),"events", "latest");
+        this.okHttpClient.newCall(request).enqueue(new Callback() {
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                log.error("Error fetching whitelist for clan", e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    log.debug("Event fetched successfully");
+                    String body = response.body().string();
+                    EventsResponse eventsResponse = gson.fromJson(body, EventsResponse.class);
+                    if(!eventsResponse.getItems().isEmpty()) {
+                        postEvent(new LatestClanEventReceived(eventsResponse.getItems().get(0)));
+                    }
+
                 }
                 response.close();
             }

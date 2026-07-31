@@ -1,6 +1,8 @@
 package com.ruthless;
 
 import com.ruthless.api.ClanBroadcastType;
+import com.ruthless.api.VanityRankColorSetting;
+import com.ruthless.api.VanityRankIconSetting;
 import com.ruthless.utils.Constants;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
@@ -14,6 +16,9 @@ public interface RuthlessConfig extends Config
 	public static final String SHOW_CLAN_BROADCASTS = "showClanBroadcasts";
 	public static final String BROADCAST_TYPE = "clanBroadcastType";
 	public static final String BROADCAST_LIMIT = "clanBroadcastLimit";
+
+	public static final String VANITY_ICONS = "vanityRankIconSetting";
+	public static final String VANITY_COLORS = "vanityRankColorSetting";
 
 	public static final String CLAN_ID = "clanId";
 	public static final String BASE_API_HOSTNAME = "baseApiHostname";
@@ -70,9 +75,35 @@ public interface RuthlessConfig extends Config
 	default int broadcastLimit() { return Constants.BROADCAST_LIMIT_DEFAULT;}
 
 	@ConfigSection(
+			name = "Vanity Rank",
+			description = "Vanity rank settings.",
+			position = 1,
+			closedByDefault = true
+	)
+	String vanityRankSettings = "vanityRankSettings";
+
+	@ConfigItem(
+			keyName = VANITY_ICONS,
+			name = "Vanity Icons",
+			description = "If enabled, shows vanity ranks next to chat and in the chat panel",
+			section = vanityRankSettings,
+			position = 1
+	)
+	default VanityRankIconSetting vanityRankSetting() { return VanityRankIconSetting.AFTER_USERNAME; }
+
+	@ConfigItem(
+			keyName = VANITY_COLORS,
+			name = "Vanity Colors",
+			description = "Colors username",
+			section = vanityRankSettings,
+			position = 2
+	)
+	default VanityRankColorSetting vanityRankColorSetting() { return VanityRankColorSetting.CLAN_PANEL; }
+
+	@ConfigSection(
 			name = "Development (DONT CHANGE)",
 			description = "Development options for plugin. DO NOT CHANGE VALUES.",
-			position = 1,
+			position = 2,
 			closedByDefault = true
 	)
 	String developmentSettings = "developmentSettings";
