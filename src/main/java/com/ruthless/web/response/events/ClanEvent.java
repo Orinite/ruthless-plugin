@@ -12,5 +12,6 @@ public class ClanEvent {
     private String eventTemplateName;
     private String startsAt;
     private String endsAt;
+    private String codeword;
     private List<ClanEventTeam> teams;
 }

@@ -57,8 +57,12 @@ public class BossKillChatEventProcessor {
     @Subscribe
     public void onChatMessage( ChatMessage chatMessage ) {
 
-        if (chatMessage.getType() != ChatMessageType.GAMEMESSAGE && chatMessage.getType() != ChatMessageType.FRIENDSCHATNOTIFICATION) {
-            return;
+        switch (chatMessage.getType()) {
+            case GAMEMESSAGE:
+            case FRIENDSCHATNOTIFICATION:
+                break;
+            default:
+                return;
         }
 
         String message = chatMessage.getMessage();
@@ -93,21 +97,23 @@ public class BossKillChatEventProcessor {
         matcher = RAIDS_DURATION_PATTERN.matcher(message);
         if(matcher.find()) {
             log.debug("raids duration pattern found");
+            String teamSize = sanitizeTeamSize(matcher.group("teamsize"));
             setNewPb(false);
             setLastTiming(timeStringToSeconds(matcher.group("time")));
             setLastPb(timeStringToSeconds(matcher.group("pb")));
             setRaid(true);
-            setRaidSize(Integer.parseInt(matcher.group("teamsize")));
+            setRaidSize(Integer.parseInt(teamSize));
             setLastUpdateTiming(Instant.now());
         }
         matcher = RAIDS_PB_PATTERN.matcher(message);
         if(matcher.find()) {
             log.debug("raids pb pattern found");
-            setNewPb(false);
+            String teamSize = sanitizeTeamSize(matcher.group("teamsize"));
+            setNewPb(true);
             setLastTiming(timeStringToSeconds(matcher.group("pb")));
             setLastPb(timeStringToSeconds(matcher.group("pb")));
             setRaid(true);
-            setRaidSize(Integer.parseInt(matcher.group("teamsize")));
+            setRaidSize(Integer.parseInt(teamSize));
             setLastUpdateTiming(Instant.now());
         }
 
@@ -162,6 +168,12 @@ public class BossKillChatEventProcessor {
             return Integer.parseInt(s[0]) * 60 * 60 + Integer.parseInt(s[1]) * 60 + Double.parseDouble(s[2]);
         }
         return Double.parseDouble(timeString);
+    }
+
+    private String sanitizeTeamSize(String teamsize) {
+        return teamsize.replace("players","")
+                .replace("Solo", "1")
+                .strip();
     }
 
 }

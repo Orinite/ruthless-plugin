@@ -7,6 +7,8 @@ import com.ruthless.RuthlessPlugin;
 import com.ruthless.event.ClanBroadcastEvent;
 import com.ruthless.event.ClanWhitelistReceivedEvent;
 import com.ruthless.event.LatestClanEventReceived;
+import com.ruthless.eventprocessor.ClanMemberProcessor;
+import com.ruthless.ui.overlay.EventCodewordOverlay;
 import com.ruthless.utils.Constants;
 import com.ruthless.web.interceptor.RuthlessApiInterceptor;
 import com.ruthless.web.request.BossKillSubmission;
@@ -36,6 +38,8 @@ public class RuthlessClient {
 
     private @Inject Client client;
     private @Inject ClientThread clientThread;
+    private @Inject EventCodewordOverlay eventCodewordOverlay;
+    private @Inject ClanMemberProcessor clanMemberProcessor;
     private EventBus eventBus;
     private RuthlessPlugin plugin;
     private String userAgent;
@@ -205,6 +209,10 @@ public class RuthlessClient {
                     EventsResponse eventsResponse = gson.fromJson(body, EventsResponse.class);
                     if(!eventsResponse.getItems().isEmpty()) {
                         postEvent(new LatestClanEventReceived(eventsResponse.getItems().get(0)));
+                    } else {
+                        //reset data if no event going on.
+                        clanMemberProcessor.clearData();
+                        eventCodewordOverlay.setCodeword(null);
                     }
 
                 }

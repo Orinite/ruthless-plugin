@@ -11,6 +11,7 @@ import com.ruthless.eventprocessor.ClanMemberProcessor;
 import com.ruthless.eventprocessor.DonationChatEventProcessor;
 import com.ruthless.eventprocessor.LootReceivedProcessor;
 import com.ruthless.ui.infobox.RuthlessInfoboxManager;
+import com.ruthless.ui.overlay.EventCodewordOverlay;
 import com.ruthless.ui.overlay.MemberAPIKeyInvalidOverlay;
 import com.ruthless.utils.ClanBroadcastValidator;
 import com.ruthless.web.RuthlessClient;
@@ -65,6 +66,7 @@ public class RuthlessPlugin extends Plugin
 	private @Inject LootReceivedProcessor lootReceivedProcessor;
 	private @Inject RuthlessInfoboxManager ruthlessInfoboxManager;
 	private @Inject ClanMemberProcessor clanMemberProcessor;
+	private @Inject EventCodewordOverlay eventCodewordOverlay;
 
 	private boolean sentClanBroadcast;
 	private boolean memberAPIKeyValid;
@@ -84,6 +86,7 @@ public class RuthlessPlugin extends Plugin
 		ruthlessClient.getLatestEvent();
 		sentClanBroadcast = false;
 		memberAPIKeyValid = !config.memberAPIKey().isEmpty();
+		overlayManager.add(eventCodewordOverlay);
 	}
 
 	@Override
@@ -94,6 +97,7 @@ public class RuthlessPlugin extends Plugin
 		eventBus.unregister(lootReceivedProcessor);
 		eventBus.unregister(donationChatEventProcessor);
 		eventBus.unregister(clanMemberProcessor);
+		overlayManager.remove(eventCodewordOverlay);
 	}
 
 	@Provides

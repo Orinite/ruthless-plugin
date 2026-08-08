@@ -4,6 +4,7 @@ import com.ruthless.RuthlessConfig;
 import com.ruthless.api.VanityRankColorSetting;
 import com.ruthless.api.VanityRankIconSetting;
 import com.ruthless.event.LatestClanEventReceived;
+import com.ruthless.ui.overlay.EventCodewordOverlay;
 import com.ruthless.web.response.events.ClanEventTeam;
 import com.ruthless.web.response.events.ClanEventTeamMember;
 import com.ruthless.web.response.events.VanityRank;
@@ -23,19 +24,20 @@ import net.runelite.client.game.ChatIconManager;
 import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.regex.Pattern;
 
 @Slf4j
+@Singleton
 public class ClanMemberProcessor {
 
     private @Inject Client client;
     private @Inject ClientThread clientThread;
-    private @Inject ChatIconManager chatIconManager;
     private @Inject RuthlessConfig config;
-    private static final Pattern RECEIVED_DROP_PATTERN = Pattern.compile("(?<player>\\w+) received a drop:");
+    private @Inject EventCodewordOverlay eventCodewordOverlay;
     private static final int CLAN_ICON_IMG_OFFSET = 2991;
 
     private Map<String, VanityRank> usernameToVanityRank = new HashMap<>();
@@ -51,12 +53,16 @@ public class ClanMemberProcessor {
     @Subscribe
     public void onLatestClanEventReceived(LatestClanEventReceived event) {
         log.debug("Received new clan event. setting up map.");
-        usernameToVanityRank.clear();
         for( ClanEventTeam team : event.getClanEvent().getTeams() ) {
             for (ClanEventTeamMember player : team.getPlayers() ) {
                 usernameToVanityRank.put(player.getPrimaryUsername().toLowerCase(), team.getVanityRank());
             }
         }
+        eventCodewordOverlay.setCodeword(event.getClanEvent().getCodeword());
+    }
+
+    public void clearData() {
+        usernameToVanityRank.clear();
     }
 
     private void handleClanMessage(ChatMessage chatMessage) {
