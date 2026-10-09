@@ -2,12 +2,14 @@ package com.ruthless.web.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
 @Builder
 @AllArgsConstructor
+@Data
 public class BossKillSubmission {
     private String sourceName;
     private double killTimeSeconds;
