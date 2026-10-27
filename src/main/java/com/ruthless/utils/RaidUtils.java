@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class RaidUtils {
 
-    public final @VarCStr int TOA_MEMBER_NAME = 1099, TOB_MEMBER_NAME = 330;
-    private final int TOA_PARTY_MAX_SIZE = 8, TOB_PARTY_MAX_SIZE = 5;
+    public final @VarCStr int TOA_MEMBER_NAME = 1099, TOB_MEMBER_NAME = 330, TFA_MEMBER_NAME = 1573;
+    private final int TOA_PARTY_MAX_SIZE = 8, TOB_PARTY_MAX_SIZE = 5, TFA_PARTY_MAX_SIZE = 8;
 
     public Collection<String> getBossParty(Client client, String source) {
         switch (source) {
@@ -39,10 +39,15 @@ public class RaidUtils {
             case "Theatre of Blood: Entry Mode":
             case "Theatre of Blood: Hard Mode":
                 return getBloodTheatreParty(client);
+            case "The Fractured Archive":
+            case "Fractured Archive":
+                return getFracturedArchiveParty(client);
             default:
                 return List.of(client.getLocalPlayer().getName());
         }
     }
+
+
 
     private Collection<String> getLocalPlayers(Client client) {
         return client
@@ -69,5 +74,8 @@ public class RaidUtils {
 
     private Collection<String> getBloodTheatreParty(Client client) {
         return getVarcStrings(client, TOB_MEMBER_NAME, TOB_PARTY_MAX_SIZE);
+    }
+    private static Collection<String> getFracturedArchiveParty(Client client) {
+        return getVarcStrings(client, TFA_MEMBER_NAME, TFA_PARTY_MAX_SIZE);
     }
 }

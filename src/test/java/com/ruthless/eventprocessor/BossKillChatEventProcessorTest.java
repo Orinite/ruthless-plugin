@@ -25,6 +25,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 public class BossKillChatEventProcessorTest {
@@ -125,5 +126,41 @@ public class BossKillChatEventProcessorTest {
         processor.onChatMessage(msg2);
 
         Mockito.verify(rc).submitBossTimeRequest(Mockito.any());
+    }
+
+    @Test
+    public void testNotifyTfa() {
+        String message = "The Fractured Archive: Total completion time: <col=ff0000>24:21.00</col>. Personal best: 21:39.20";
+        ChatMessage msg = new ChatMessage();
+        msg.setType(ChatMessageType.GAMEMESSAGE);
+        msg.setMessage(message);
+
+        processor.onChatMessage(msg);
+
+        String message2 = "Your completed Fractured Archive count is: <col=ff0000>24</col>.";
+        ChatMessage msg2 = new ChatMessage();
+        msg2.setType(ChatMessageType.GAMEMESSAGE);
+        msg2.setMessage(message2);
+
+        processor.onChatMessage(msg2);
+
+        Mockito.verify(rc, times(1)).submitBossTimeRequest(Mockito.any());
+
+
+        message = "The Fractured Archive: Total completion time: <col=ef1020>19:56.40</col> (new personal best)";
+        msg = new ChatMessage();
+        msg.setType(ChatMessageType.GAMEMESSAGE);
+        msg.setMessage(message);
+
+        processor.onChatMessage(msg);
+
+        message2 = "Your completed Fractured Archive count is: <col=ff0000>25</col>.";
+        msg2 = new ChatMessage();
+        msg2.setType(ChatMessageType.GAMEMESSAGE);
+        msg2.setMessage(message2);
+
+        processor.onChatMessage(msg2);
+
+        Mockito.verify(rc, times(2)).submitBossTimeRequest(Mockito.any());
     }
 }

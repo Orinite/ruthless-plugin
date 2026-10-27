@@ -30,6 +30,8 @@ public class BossKillChatEventProcessor {
     private static final String TEAM_SIZES = "(?<teamsize>\\d+(?:\\+|-\\d+)? players?|Solo)";
     private static final Pattern RAIDS_PB_PATTERN = Pattern.compile("<col=ef20ff>Congratulations - your raid is complete!</col><br>Team size: <col=ff0000>" + TEAM_SIZES + "</col> Duration:</col> <col=ff0000>(?<pb>[0-9:]+(?:\\.[0-9]+)?)</col> \\(new personal best\\)</col>");
     private static final Pattern RAIDS_DURATION_PATTERN = Pattern.compile("<col=ef20ff>Congratulations - your raid is complete!</col><br>Team size: <col=ff0000>" + TEAM_SIZES + "</col> Duration:</col> <col=ff0000>(?<time>[0-9:.]+)</col> Personal best: </col><col=ff0000>(?<pb>[0-9:]+(?:\\.[0-9]+)?)</col>");
+    private static final Pattern TFA_RAID_DURATION_PATTERN = Pattern.compile("The Fractured Archive: Total completion time: (?:<col=[0-9a-f]{6}>|@.+?@)(?<time>[0-9:.]+)</col>\\. Personal best: (?:<col=ff0000>|@.+?@)?(?<pb>[0-9:]+(?:\\\\.[0-9]+)?)");
+    private static final Pattern TFA_PB_PATTERN = Pattern.compile("The Fractured Archive: Total completion time: (?:<col=[0-9a-f]{6}>|@.+?@)(?<pb>[0-9:.]+)</col> \\(new personal best\\)");
     private static final long FIVE_SECONDS_MILLIS = 5000L;
 
     @Setter
@@ -116,7 +118,29 @@ public class BossKillChatEventProcessor {
             setRaidSize(Integer.parseInt(teamSize));
             setLastUpdateTiming(Instant.now());
         }
+        matcher = TFA_RAID_DURATION_PATTERN.matcher(message);
+        if(matcher.find()) {
+            log.debug("raids duration pattern found");
+            int teamsize = RaidUtils.getBossParty(client, "Fractured Archive").size();
+            setNewPb(false);
+            setLastTiming(timeStringToSeconds(matcher.group("time")));
+            setLastPb(timeStringToSeconds(matcher.group("pb")));
+            setRaid(true);
+            setRaidSize(teamsize);
+            setLastUpdateTiming(Instant.now());
 
+        }
+        matcher = TFA_PB_PATTERN.matcher(message);
+        if(matcher.find()) {
+            log.debug("raids pb pattern found");
+            int teamsize = RaidUtils.getBossParty(client, "Fractured Archive").size();
+            setNewPb(true);
+            setLastTiming(timeStringToSeconds(matcher.group("pb")));
+            setLastPb(timeStringToSeconds(matcher.group("pb")));
+            setRaid(true);
+            setRaidSize(teamsize);
+            setLastUpdateTiming(Instant.now());
+        }
         if (!Strings.isNullOrEmpty(lastBoss) && lastKc > 0 && lastTiming > 0.0 && validateTiming()) {
             log.debug("new time event emit. Boss: {}, kc: {}, time: {}, pb: {}", lastBoss, lastKc, lastTiming, lastPb);
             Player local = client.getLocalPlayer();
